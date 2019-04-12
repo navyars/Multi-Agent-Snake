@@ -16,13 +16,14 @@ class Snake:
         self.alive = True
         self.score = 0
 
-    def didEatFood():
-        if(self.head in Food.foodList):
+    def didEatFood(self):
+        f = Food()
+        if(self.head in f.returnFoodList()):
             self.score = self.score + 1
-            growSnake(self.head, self.end, self.joints)
-            Food.eatFood(self.head)
+            growSnake()
+            f.eatFood(self.head)
 
-    def didHitWall():
+    def didHitWall(self):
         if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
             return True
         else:
