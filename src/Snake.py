@@ -4,7 +4,7 @@ from numpy.random import randint
 
 from Point import Point
 from Action import Action
-from Food import Food
+from Food import *
 from Constants import *
 
 class Snake:
@@ -17,11 +17,10 @@ class Snake:
         self.score = 0
 
     def didEatFood(self):
-        f = Food()
-        if(self.head in f.returnFoodList()):
+        if(self.head in foodList):
             self.score = self.score + 1
-            growSnake()
-            f.eatFood(self.head)
+            self.growSnake()
+            eatFood(self.head)
 
     def didHitWall(self):
         if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
