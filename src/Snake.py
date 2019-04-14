@@ -43,7 +43,7 @@ class Snake:
         else:
             direction = self.findDirection(self.head, self.joints[0])
             if direction != action: # add joint when snake changes direction
-                self.joints.insert(Point.fromPoint(self.head), 0)
+                self.joints.insert(0, Point.fromPoint(self.head))
             self.head = self._update_point(self.head, action)
 
             direction = self.findDirection(self.joints[-1], self.end)
@@ -57,7 +57,7 @@ class Snake:
             self.kill()
 
         for s in snakes:
-            if self.didHitSnake(s): # TODO: This should mostly be a simultaneous check across all snakes, after their movements
+            if self.didHitSnake(s): # TODO: This should mostly be a simultaneous check across all snakes, after their movements.
                 self.head, self.joints, self.end = self._copy(prev_head, prev_joints, prev_end)
                 self.kill()
 
