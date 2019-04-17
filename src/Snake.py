@@ -99,4 +99,33 @@ class Snake:
                     lim1, lim2 = tuple(sorted([p1.x, p2.x]))
                     if p.x in range(lim1, lim2 + 1):
                         return True
-    
+
+    def findDirection(self, p1, p2):  # Direction of P1 with reference to P2
+        if p1.x - p2.x == 0 and p1.y - p2.y < 0:
+            return Action.DOWN
+        elif p1.x - p2.x == 0 and p1.y - p2.y > 0:
+            return Action.TOP
+        elif p1.x - p2.x > 0 and p1.y - p2.y == 0:
+            return Action.RIGHT
+        elif p1.x - p2.x < 0 and p1.y - p2.y == 0:
+            return Action.LEFT
+
+    def growSnake(self): # Grows the snake in the direction of the tail. Should be called before moveInDirection
+
+        if self.joints == []:
+            direction = self.findDirection(self.end, self.head)
+        # Finding direction from the last joint/head to tail as it is in this direction the increment should happen
+        else:
+            direction = self.findDirection(self.end, self.joints[-1])
+        self.end = self._update_point(self.end, direction)
+
+    def permissible_actions(self):  # Returns a list of permissible actions
+        actions = []
+        if self.joints == []:
+            direction = self.findDirection(self.end, self.head)
+        else:
+            direction = self.findDirection(self.joints[-1], self.head)
+        for act in (Action):
+            if act != direction:
+                actions.append(act)
+        return actions
