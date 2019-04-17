@@ -2,15 +2,29 @@ from numpy.random import randint
 
 from Point import Point
 from Action import Action
+from Food import *
+from Constants import *
 
 class Snake:
-
     def __init__(self, gridSize, identity):
         self.head = Point(randint(10, gridSize - 10), randint(10, gridSize - 10)) # generate point with at least 10 units gap from any wall
         self.end = Point( self.head.x - 5, self.head.y )
         self.joints = []
         self.id = identity
         self.alive = True
+        self.score = 0
+
+    def didEatFood(self):
+        if(self.head in foodList):
+            self.score = self.score + 1
+            self.growSnake()
+            eatFood(self.head)
+
+    def didHitWall(self):
+        if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
+            return True
+        else:
+            return False
 
     def _update_point(self, p, direction):
         if direction == Action.TOP:
@@ -37,7 +51,7 @@ class Snake:
         if self.joints == []:
             direction = self.findDirection(self.head, self.end)
             if direction != action: # add joint when snake changes direction
-                self.joints.append( Point.fromPoint(self.head))
+                self.joints.append(Point.fromPoint(self.head))
             self.head = self._update_point(self.head, action)
             self.end = self._update_point(self.end, direction)
         else:
@@ -64,25 +78,25 @@ class Snake:
         return
 
     def didHitSnake(self, opponent_snake):
-            body = [opponent_snake.head]
-            body.extend( opponent_snake.joints )
-            body.append(opponent_snake.end)
+        body = [opponent_snake.head]
+        body.extend(opponent_snake.joints)
+        body.append(opponent_snake.end)
 
-            p = self.head
-            if p == opponent_snake.head :
-                return (self.score <= opponent_snake.score) # if heads collide, the larger snake remains. If the scores are equal, then both snakes should die.
+        p = self.head
+        if p == opponent_snake.head :
+            return (self.score <= opponent_snake.score) # if heads collide, the larger snake remains. If the scores are equal, then both snakes should die.
 
-            for i in xrange(len(body)-1):
-                p1 = body[i]
-                p2 = body[i+1]
-                if p1.x == p2.x: #vertical line
-                    if p.x == p1.x:
-                        lim1, lim2 = tuple(sorted([p1.y, p2.y]))
-                        if p.y in range( lim1, lim2 +1):
-                            return True
-                else: #horizontal line
-                    if p.y == p1.y:
-                        lim1, lim2 = tuple(sorted([p1.x, p2.x]))
-                        if p.x in range(lim1, lim2 + 1):
-                            return True
-            return False
+        for i in xrange(len(body)-1):
+            p1 = body[i]
+            p2 = body[i+1]
+            if p1.x == p2.x: #vertical line
+                if p.x == p1.x:
+                    lim1, lim2 = tuple(sorted([p1.y, p2.y]))
+                    if p.y in range( lim1, lim2 +1):
+                        return True
+            else: #horizontal line
+                if p.y == p1.y:
+                    lim1, lim2 = tuple(sorted([p1.x, p2.x]))
+                    if p.x in range(lim1, lim2 + 1):
+                        return True
+    
