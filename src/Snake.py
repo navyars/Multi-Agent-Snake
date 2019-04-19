@@ -125,6 +125,7 @@ class Snake:
             direction = self.findDirection(self.end, self.head)
         else:
             direction = self.findDirection(self.joints[-1], self.head)
+            direction = self.findDirection(self.joints[0], self.head)
         for act in (Action):
             if act != direction:
                 actions.append(act)
