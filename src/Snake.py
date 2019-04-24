@@ -16,6 +16,16 @@ class Snake:
         self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
         return
 
+    def __str__(self):
+        if self.alive:
+            body = [self.head]
+            body.extend(self.joints)
+            body.append(self.end)
+            body_str = str(map(str,body))
+            return "Snake " + str(self.id) + ": " + body_str
+        else:
+            return "Snake " + str(self.id) + ": Dead"
+
     def didEatFood(self):
         if(self.head in foodList):
             self.score = self.score + 1
@@ -68,7 +78,7 @@ class Snake:
 
             direction = self.findDirection(self.joints[-1], self.end)
             self.end = self._update_point(self.end, direction)
-            if self.end == self.joints[-1]: # pop joint if end has reached it
+            if (self.end.x == self.joints[-1].x) and (self.end.y == self.joints[-1].y): # pop joint if end has reached it
                 self.joints = self.joints[:-1]
 
         # check if the snake has collided with wall or other snakes. If true, undo movement and kill it
