@@ -59,7 +59,7 @@ class Snake:
         self.head, self.joints, self.end = self._copy(self.prev_head, self.prev_joints, self.prev_end)
         return
 
-    def moveInDirection(self, action, snakes=[]):
+    def moveInDirection(self, action):
         assert (action in self.permissible_actions()), "Action not allowed in this state."
         self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
 
