@@ -13,6 +13,18 @@ class Snake:
         self.id = identity
         self.alive = True
         self.score = 0
+        self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
+        return
+
+    def __str__(self):
+        if self.alive:
+            body = [self.head]
+            body.extend(self.joints)
+            body.append(self.end)
+            body_str = str(map(str,body))
+            return "Snake " + str(self.id) + ": " + body_str
+        else:
+            return "Snake " + str(self.id) + ": Dead"
 
     def didEatFood(self):
         if(self.head in foodList):
@@ -43,9 +55,13 @@ class Snake:
         _end = Point.fromPoint(end)
         return _head, _joints, _end
 
-    def moveInDirection(self, action, snakes=[]):
+    def backtrack(self):
+        self.head, self.joints, self.end = self._copy(self.prev_head, self.prev_joints, self.prev_end)
+        return
+
+    def moveInDirection(self, action):
         assert (action in self.permissible_actions()), "Action not allowed in this state."
-        prev_head, prev_joints, prev_end = self._copy(self.head, self.joints, self.end)
+        self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
 
         # move the snake in the direction specified
         if self.joints == []:
@@ -62,18 +78,13 @@ class Snake:
 
             direction = self.findDirection(self.joints[-1], self.end)
             self.end = self._update_point(self.end, direction)
-            if self.end == self.joints[-1]: # pop joint if end has reached it
+            if (self.end.x == self.joints[-1].x) and (self.end.y == self.joints[-1].y): # pop joint if end has reached it
                 self.joints = self.joints[:-1]
 
         # check if the snake has collided with wall or other snakes. If true, undo movement and kill it
         if self.didHitWall():
-            self.head, self.joints, self.end = self._copy(prev_head, prev_joints, prev_end)
-            self.kill()
-
-        for s in snakes:
-            if self.didHitSnake(s): # TODO: This should mostly be a simultaneous check across all snakes, after their movements.
-                self.head, self.joints, self.end = self._copy(prev_head, prev_joints, prev_end)
-                self.kill()
+            self.backtrack()
+            self.killSnake()
 
         return
 
