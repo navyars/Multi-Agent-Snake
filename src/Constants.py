@@ -1,4 +1,4 @@
 globalEpisodeLength = 60
 numberOfSnakes = 2
 maximumFood = 10
-gridSize = 256
+gridSize = 50
