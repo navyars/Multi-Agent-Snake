@@ -140,3 +140,38 @@ class Snake:
             if act != direction:
                 actions.append(act)
         return actions
+
+    def killSnake(self):
+        self.alive = False
+
+        body = [self.head]
+        body.extend(self.joints)
+        body.append(self.end)
+        points = [self.head]
+        points.extend(self.joints)
+        points.append(self.end)
+
+        for i in range(len(body) - 1):
+            p1 = body[i]
+            p2 = body[i + 1]
+            if p1.x == p2.x:    # vertical line
+                if p1.y < p2.y: # get the smaller of the two values to iterate over them
+                    start = p1.y
+                    end = p2.y
+                else:
+                    start = p2.y
+                    end = p1.y
+                for y in range(start + 1, end):
+                    if Point(p1.x, y) not in points:
+                        points.append(Point(p1.x, y))
+            else:   # horizontal line
+                if p1.x < p2.x:
+                    start = p1.x
+                    end = p2.x
+                else:
+                    start = p2.x
+                    end = p1.x
+                for x in range(start + 1, end):
+                    if Point(x, p1.y) not in points:
+                        points.append(Point(x, p1.y))
+        Food.addFoodToList(points)
