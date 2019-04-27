@@ -10,3 +10,9 @@ class Point:
 
     def __str__(self):
         return "({}, {})".format(self.x, self.y)
+
+    def compare(p1 , p2):
+        if p1.x == p2.x and p1.y == p2.y:
+            return True
+        else:
+            return False

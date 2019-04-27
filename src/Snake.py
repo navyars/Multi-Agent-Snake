@@ -27,7 +27,7 @@ class Snake:
             return "Snake " + str(self.id) + ": Dead"
 
     def didEatFood(self):
-        if(self.head in foodList):
+        if True in [Point.compare(f, self.head) for f in foodList]:
             self.score = self.score + 1
             self.growSnake()
             eatFood(self.head)
@@ -78,7 +78,7 @@ class Snake:
 
             direction = self.findDirection(self.joints[-1], self.end)
             self.end = self._update_point(self.end, direction)
-            if (self.end.x == self.joints[-1].x) and (self.end.y == self.joints[-1].y): # pop joint if end has reached it
+            if Point.compare(self.end, self.joints[-1]):# pop joint if end has reached it
                 self.joints = self.joints[:-1]
 
         # check if the snake has collided with wall or other snakes. If true, undo movement and kill it
@@ -97,7 +97,7 @@ class Snake:
         if p == opponent_snake.head :
             return (self.score <= opponent_snake.score) # if heads collide, the larger snake remains. If the scores are equal, then both snakes should die.
 
-        for i in xrange(len(body)-1):
+        for i in range(len(body)-1):
             p1 = body[i]
             p2 = body[i+1]
             if p1.x == p2.x: #vertical line

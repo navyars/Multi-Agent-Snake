@@ -6,8 +6,8 @@ import numpy as np
 class Game:
     def __init__(self, numOfSnakes=2, gridSize=10, maxEpisodeLength=300):
         self.snakes = []
-        for idx in xrange(numOfSnakes):
-            self.snakes.append( Snake(gridSize, idx) )
+        for idx in range(numOfSnakes):
+            self.snakes.append(Snake(gridSize, idx) )
 
         Food.createFood(10)
         self.gameLength = maxEpisodeLength
@@ -29,7 +29,7 @@ class Game:
         assert len(actionsList)==len(self.snakes), "Deficiency of actions provided."
 
         action_validity_check = []
-        for i in xrange(len(self.snakes)):
+        for i in range(len(self.snakes)):
             s = self.snakes[i]
             permissible_actions = s.permissible_actions()
             action_validity_check.append( actionsList[i] in permissible_actions )
@@ -37,15 +37,15 @@ class Game:
 
         self.time_step += 1
 
-        for i in xrange(len(actionsList)):
+        for i in range(len(actionsList)):
             s = self.snakes[i]
             a = actionsList[i]
 
             s.moveInDirection(a)
             s.didEatFood()
 
-        for i in xrange(len(self.snakes)):
-            for j in xrange(i+1, len(self.snakes)):
+        for i in range(len(self.snakes)):
+            for j in range(i+1, len(self.snakes)):
                 if self.snakes[i].didHitSnake(self.snakes[j]):
                     self.snakes[i].backtrack()
                     self.snakes[i].killSnake()

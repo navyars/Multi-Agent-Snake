@@ -16,6 +16,8 @@ def addFoodToList(pointList):
         foodList.append(i)
 
 def eatFood(food):
-    foodList.remove(food)
+    for i in foodList:
+        if Point.compare(i, food):
+            foodList.remove(i)
     if(len(foodList) < maximumFood):
         createFood(maximumFood - len(foodList))
