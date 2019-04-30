@@ -87,4 +87,3 @@ def getRelativeStateForSingleAgent(snake, kNearestPoints = 3):
     state.append(findSnakeDirection(snake))   # direction
 
     return state
-
