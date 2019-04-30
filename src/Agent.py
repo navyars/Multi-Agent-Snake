@@ -10,13 +10,15 @@ class NeuralNetwork:
         opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
         reward = tf.placeholder(tf.float32, shape=[None,1], name="reward")
-        terminal_loss = reward - Q_value
+        terminal_difference = reward - Q_value
+        terminal_loss = tf.square(terminal_difference, name="terminal_loss")
         terminal_grads_and_vars = opt.compute_gradients(terminal_loss)
 
         best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
         t1 = gamma*best_Q
         t2 = reward + t1
-        loss = t2 - Q_value
+        difference = t2 - Q_value
+        loss = tf.square(difference, name="loss")
         grads_and_vars = opt.compute_gradients(loss)
 
         # Dictionary to access all these layers for running in session
@@ -44,7 +46,7 @@ class NeuralNetwork:
         layers[3] = tf.layers.dense(layers[2], 4, # one for each action
                                                             kernel_initializer=xavier_init, use_bias=True,
                                                             activation=tf.nn.relu, name="out")
-        layers[4] = tf.nn.softmax(layers[3])
+        layers[4] = tf.nn.softmax(layers[3], name="softmax")
         return layers
 
 if __name__=="__main__":
@@ -62,5 +64,6 @@ if __name__=="__main__":
         print "Terminal gradient = "
         print sess.run(nn.model["terminal_gradient"], feed_dict={nn.model["state"] : input_data, nn.model["reward"] : reward, nn.model["action"] : action})
         print "Normal gradient = "
-        print sess.run(nn.model["gradient"], feed_dict={nn.model["state"] : input_data, nn.model["reward"] : reward, nn.model["best_Q"] : best_q_value, nn.model["action"] : action})
+        grads_and_vars = sess.run(nn.model["gradient"], feed_dict={nn.model["state"] : input_data, nn.model["reward"] : reward, nn.model["best_Q"] : best_q_value, nn.model["action"] : action})
+        print grads_and_vars
     print "Complete"
