@@ -1,4 +1,4 @@
-###   SINGLE SNAKE  ### (each attribute is in a separate list in the order given below)
+###   SINGLE SNAKE  ###
     # absolute
         # head
         # k nearest points - from head
@@ -31,19 +31,19 @@ from Food import *
 def calculateDistance(p1, p2):
     return sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
 
-def findKNearestPoints(head, kNearestPoints):
+def findKNearestPoints(head, k):
     dist = []
     nearestPoints = []
 
     for food in foodList:
         dist.append(calculateDistance(food, head))
 
-    if len(foodList) < kNearestPoints:
-        kNearestPoints = len(foodList)
+    if len(foodList) < k:
+        k = len(foodList)
 
-    argmin = np.argpartition(dist, kNearestPoints)
+    argmin = np.argpartition(dist, k)
 
-    for i in range(kNearestPoints):
+    for i in range(k):
         nearestPoints.append(foodList[argmin[i]])
     
     return nearestPoints
@@ -54,35 +54,31 @@ def findSnakeDirection(snake):
     else:
         direction = snake.findDirection(snake.head, snake.joints[0])
 
-    return [direction]
+    return direction
 
 def relativePoints(head, point):
     return Point( point.x - head.x, point.y - head.y )
 
-def getAbsoluteStateForSingleAgent(snake, kNearestPoints = 3):
+def getAbsoluteStateForSingleAgent(snake, k = 3):
     state = []
-    state.append([snake.head])  # head
+    state.append(snake.head)  # head
 
     if(len(foodList)):          # k nearest points
-        state.append(findKNearestPoints(snake.head, kNearestPoints))
-    else:
-        state.append([])
+        state.extend(findKNearestPoints(snake.head, k))
 
     state.append(findSnakeDirection(snake))   # direction
 
     return state
 
-def getRelativeStateForSingleAgent(snake, kNearestPoints = 3):
+def getRelativeStateForSingleAgent(snake, k = 3):
     state = []
 
     if(len(foodList)):          # k nearest points
         relativeFoodPoints = []
-        absoluteFoodPoints = findKNearestPoints(snake.head, kNearestPoints)
+        absoluteFoodPoints = findKNearestPoints(snake.head, k)
         for point in absoluteFoodPoints:
             relativeFoodPoints.append(relativePoints(snake.head, point))
-        state.append(relativeFoodPoints)
-    else:
-        state.append([])
+        state.extend(relativeFoodPoints)
 
     state.append(findSnakeDirection(snake))   # direction
 
