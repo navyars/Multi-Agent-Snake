@@ -3,34 +3,36 @@ import tensorflow as tf
 class NeuralNetwork:
 
     def __init__(self,data_length, size_of_hidden_layer=20, gamma=0.9, learning_rate=0.1):
-        self.layers = self.create_model(data_length, size_of_hidden_layer) # defines the neural network architecture
-        action = tf.placeholder(tf.int32, shape=[None, 1], name="action_selected")
-        Q_value = tf.batch_gather(self.layers[-1], action, name="Q") # fetch the Q(s,a) value
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self.layers = self.create_model(data_length, size_of_hidden_layer) # defines the neural network architecture
+            action = tf.placeholder(tf.int32, shape=[None, 1], name="action_selected")
+            Q_value = tf.batch_gather(self.layers[-1], action, name="Q") # fetch the Q(s,a) value
 
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
-        reward = tf.placeholder(tf.float32, shape=[None,1], name="reward")
-        best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
-        t1 = gamma*best_Q
-        t2 = reward + t1
-        difference = t2 - Q_value
-        loss = tf.square(difference, name="loss")
+            reward = tf.placeholder(tf.float32, shape=[None,1], name="reward")
+            best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
+            t1 = gamma*best_Q
+            t2 = reward + t1
+            difference = t2 - Q_value
+            loss = tf.square(difference, name="loss")
 
-        trainable_vars = tf.trainable_variables()
+            trainable_vars = tf.trainable_variables()
+            saver = tf.train.Saver(trainable_vars) # used for saving and restoring the weights of the hidden layers
 
-        saver = tf.train.Saver(trainable_vars) # used for saving and restoring the weights of the hidden layers
+            #list of TF variables. Each one corresponds to a layer weight, and is used to store the accumulated gradient of that layer weight
+            accum_vars = [tf.Variable(tf.zeros_like(tv.initialized_value()), trainable=False) for tv in trainable_vars]
+            zero_ops = [tv.assign(tf.zeros_like(tv)) for tv in accum_vars] # used to reset the accumulator
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+            	# global_step = tf.Variable(0, name='global_step', trainable=False)
+            	# learning_rate = tf_utils.poly_lr(global_step)
+                grads_and_vars = optimizer.compute_gradients(loss, var_list=trainable_vars) # fetch the gradients
+                accum_ops = [accum_vars[i].assign_add(gv[0]) for i, gv in enumerate(grads_and_vars)] # accumulate them
+                train_op = optimizer.apply_gradients([(accum_vars[i], gv[1]) for i, gv in enumerate(grads_and_vars)]) # train with the accumulated gradients
 
-        #list of TF variables. Each one corresponds to a layer weight, and is used to store the accumulated gradient of that layer weight
-        accum_vars = [tf.Variable(tf.zeros_like(tv.initialized_value()), trainable=False) for tv in trainable_vars]
-        zero_ops = [tv.assign(tf.zeros_like(tv)) for tv in accum_vars] # used to reset the accumulator
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-        	# global_step = tf.Variable(0, name='global_step', trainable=False)
-        	# learning_rate = tf_utils.poly_lr(global_step)
-            grads_and_vars = optimizer.compute_gradients(loss, var_list=trainable_vars) # fetch the gradients
-            accum_ops = [accum_vars[i].assign_add(gv[0]) for i, gv in enumerate(grads_and_vars)] # accumulate them
-            train_op = optimizer.apply_gradients([(accum_vars[i], gv[1]) for i, gv in enumerate(grads_and_vars)]) # train with the accumulated gradients
-
+            global_init = tf.global_variables_initializer()
         # Dictionary to access all these layers for running in session
         self.model = {}
         # all placeholders
@@ -47,6 +49,8 @@ class NeuralNetwork:
         self.model["train"] = train_op
         # saver
         self.model["saver"] = saver
+        # initializer
+        self.model["init"] = global_init
         return
 
     def create_model(self, data_length, size_of_hidden_layer):
@@ -69,6 +73,10 @@ class NeuralNetwork:
 
     def restore_model(self, sess, path):
         self.model["saver"].restore(sess, path)
+        return
+
+    def init(self, sess):
+        sess.run(self.model["init"])
         return
 
     def Q(self, sess, state, action):
@@ -116,22 +124,29 @@ class NeuralNetwork:
 if __name__=="__main__":
     import numpy as np
 
-    nn = NeuralNetwork(3)
+    nn1 = NeuralNetwork(3)
+    nn2 = NeuralNetwork(3)
+    sess1 = tf.Session(graph=nn1.graph)
+    sess2 = tf.Session(graph=nn2.graph)
+
     input_data = np.random.rand(1,3, 2)
     action = [[3]]
     reward = [[-1]]
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        print "Output = " + str(nn.Q(sess, input_data, action)[0, 0])
-        print "Normal gradient = " + str(nn.get_gradients(sess, input_data, action, reward)[0][0])
-        for _ in xrange(10):
-            print "Update = " + str(nn.update_gradient(sess, input_data, action, reward, input_data)[0][0])
-        # print "Train = " + str(nn.train(sess, input_data, action, reward, input_data))
-        # print "Clear = " + str(nn.reset_accumulator(sess))
-        print "Save = " + str(nn.save_model(sess, "a.ckpt"))
+
+    nn1.init(sess1)
+    nn2.init(sess2)
+    nn1.save_model(sess1, "a.ckpt")     # if you comment out this line and the next, the outputs below will differ
+    nn2.restore_model(sess2, "a.ckpt") # else they will be the same
+    print "Output = " + str(nn1.Q(sess1, input_data, action)[0][0])
+    print "Output = " + str(nn2.Q(sess2, input_data, action)[0][0])
+
+    print "Normal gradient = " + str(nn1.get_gradients(sess1, input_data, action, reward)[0][0])
+    for _ in xrange(10):
+        print "Update = " + str(nn1.update_gradient(sess1, input_data, action, reward, input_data)[0][0])
+    print "Train = " + str(nn1.train(sess1, input_data, action, reward, input_data))
+    print "Clear = " + str(nn1.reset_accumulator(sess1))
+    print "Save = " + str(nn1.save_model(sess1, "b.ckpt"))
     print "Complete"
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        print "Load = " + str(nn.restore_model(sess, "a.ckpt"))
-        print "Output = " + str(nn.Q(sess, input_data, action)[0][0])
-        print "Update = " + str(nn.update_gradient(sess, input_data, action, reward, input_data)[0][0])
+
+    sess1.close()
+    sess2.close() # remember to close the sessions
