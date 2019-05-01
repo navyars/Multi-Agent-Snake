@@ -7,19 +7,26 @@ class NeuralNetwork:
         action = tf.placeholder(tf.int32, shape=[None, 1], name="action_selected")
         Q_value = tf.batch_gather(self.layers[-1], action, name="Q")
 
-        opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
         reward = tf.placeholder(tf.float32, shape=[None,1], name="reward")
-        terminal_difference = reward - Q_value
-        terminal_loss = tf.square(terminal_difference, name="terminal_loss")
-        terminal_grads_and_vars = opt.compute_gradients(terminal_loss)
-
         best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
         t1 = gamma*best_Q
         t2 = reward + t1
         difference = t2 - Q_value
         loss = tf.square(difference, name="loss")
-        grads_and_vars = opt.compute_gradients(loss)
+
+        trainable_vars = tf.trainable_variables()
+
+        accum_vars = [tf.Variable(tf.zeros_like(tv.initialized_value()), trainable=False) for tv in trainable_vars]
+        zero_ops = [tv.assign(tf.zeros_like(tv)) for tv in accum_vars]
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+        	# global_step = tf.Variable(0, name='global_step', trainable=False)
+        	# learning_rate = tf_utils.poly_lr(global_step)
+            grads_and_vars = optimizer.compute_gradients(loss, var_list=trainable_vars)
+            accum_ops = [accum_vars[i].assign_add(gv[0]) for i, gv in enumerate(grads_and_vars)]
+            train_op = optimizer.apply_gradients([(accum_vars[i], gv[1]) for i, gv in enumerate(grads_and_vars)])
 
         # Dictionary to access all these layers for running in session
         self.model = {}
@@ -31,8 +38,10 @@ class NeuralNetwork:
         # all outputs
         self.model["softmax"] = self.layers[-1]
         self.model["Q_value"] = Q_value
-        self.model["terminal_gradient"] = terminal_grads_and_vars
         self.model["gradient"] = grads_and_vars
+        self.model["update_gradient"] = accum_ops
+        self.model["reset_accum"] = zero_ops
+        self.model["train"] = train_op
         return
 
     def create_model(self, data_length, size_of_hidden_layer):
@@ -49,6 +58,48 @@ class NeuralNetwork:
         layers[4] = tf.nn.softmax(layers[3], name="softmax")
         return layers
 
+    def Q(self, sess, state, action):
+        return sess.run(self.model["Q_value"], feed_dict={ self.model["state"] : state, self.model["action"] : action })
+
+    def max_Q(self, sess, state):
+        return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
+
+    def get_gradients(self, sess, state, action, reward, next_state=None):
+        if next_state is not None:
+            best_q_value = [[ self.max_Q(sess, next_state) ]]
+        else:
+            best_q_value = [[0]]
+        arg_dict = {self.model["state"] : input_data,
+                            self.model["action"] : action,
+                            self.model["reward"] : reward,
+                            self.model["best_Q"] : best_q_value}
+        return sess.run(self.model["gradient"], feed_dict=arg_dict)
+
+    def update_gradient(self, sess, state, action, reward, next_state=None):
+        if next_state is not None:
+            best_q_value = [[ self.max_Q(sess, next_state) ]]
+        else:
+            best_q_value = [[0]]
+        arg_dict = {self.model["state"] : input_data,
+                            self.model["action"] : action,
+                            self.model["reward"] : reward,
+                            self.model["best_Q"] : best_q_value}
+        return sess.run(self.model["update_gradient"], feed_dict=arg_dict)
+
+    def reset_accumulator(self, sess):
+        return sess.run(self.model["reset_accum"])
+
+    def train(self, sess, state, action, reward, next_state=None):
+        if next_state is not None:
+            best_q_value = [[ self.max_Q(sess, next_state) ]]
+        else:
+            best_q_value = [[0]]
+        arg_dict = {self.model["state"] : input_data,
+                            self.model["action"] : action,
+                            self.model["reward"] : reward,
+                            self.model["best_Q"] : best_q_value}
+        return sess.run(self.model["train"], feed_dict=arg_dict)
+
 if __name__=="__main__":
     import numpy as np
 
@@ -58,12 +109,11 @@ if __name__=="__main__":
     reward = [[-1]]
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        print "Output = "
-        print sess.run(nn.model["Q_value"], feed_dict={nn.model["state"] : input_data, nn.model["action"] : action} )
-        best_q_value = [[ np.max(sess.run(nn.model["softmax"], feed_dict={nn.model["state"] : input_data} )) ]]
-        print "Terminal gradient = "
-        print sess.run(nn.model["terminal_gradient"], feed_dict={nn.model["state"] : input_data, nn.model["reward"] : reward, nn.model["action"] : action})
-        print "Normal gradient = "
-        grads_and_vars = sess.run(nn.model["gradient"], feed_dict={nn.model["state"] : input_data, nn.model["reward"] : reward, nn.model["best_Q"] : best_q_value, nn.model["action"] : action})
-        print grads_and_vars
+        print "Output = " + str(nn.Q(sess, input_data, action))
+        print "Normal gradient = " + str(nn.get_gradients(sess, input_data, action, reward) )
+        for _ in xrange(10):
+            print "Update = " + str(nn.update_gradient(sess, input_data, action, reward, input_data))
+        print "Train = " + str(nn.train(sess, input_data, action, reward, input_data))
+        print "Clear = " + str(nn.reset_accumulator(sess))
+
     print "Complete"
