@@ -1,5 +1,4 @@
 from numpy.random import randint
-import copy
 
 from Point import Point
 from Action import Action
@@ -148,19 +147,8 @@ class Snake:
         body = [self.head]
         body.extend(self.joints)
         body.append(self.end)
-        points = copy.deepcopy(body)
-
-        for i in range(len(body) - 1):
-            p1 = body[i]
-            p2 = body[i + 1]
-            if p1.x == p2.x:    # vertical line
-                for y in range(min(p1.y, p2.y) + 1, max(p1.y, p2.y)):
-                    points.append(Point(p1.x, y))
-            else:   # horizontal line
-                for x in range(min(p1.x, p2.x) + 1, max(p1.x, p2.x)):
-                    points.append(Point(x, p1.y))
-
-        Food.addFoodToList(points)
+        points = Point.returnBodyPoints(body)
+        addFoodToList(points)
 
         del self.head
         del self.end

@@ -6,6 +6,7 @@
     # relative
         # k nearest points
         # direction - action enums
+        # nearest wall
 
 ###  MULITPLE SNAKES  ###
     # absolute
@@ -14,17 +15,23 @@
         # direction - action enums
         # other snakes head
         # other snakes closest point
+        # direction of the other agent
+        # nearest point of the snake to the other agent
     # relative
         # k nearest points
         # direction - action enums
         # other snakes head
         # other snakes closest point
+        # direction of the other agent
+        # nearest point of the snake to the other agent
+        # nearest wall
 
 from math import *
 import numpy as np
 
 from Snake import Snake
 from Point import Point
+from Action import Action
 from Constants import *
 from Food import *
 
@@ -59,9 +66,55 @@ def findSnakeDirection(snake):
 def relativePoints(head, point):
     return Point( point.x - head.x, point.y - head.y )
 
+def calculateMinDistPoint(snake, points):
+    dist = []
+    for point in points:
+        dist.append(calculateDistance(point, snake.head))
+    dist = np.asarray(dist)
+
+    minIndices = np.where(dist == dist.min())
+    if minIndices[0] == (1,):
+        return points[minIndices[0][0]]
+    else:
+        direction = findSnakeDirection(snake)
+        for index in range(len(minIndices[0])):
+            if direction == Action.TOP:
+                if(points[minIndices[0][index]].x == snake.head.x and points[minIndices[0][index]].y >= snake.head.y):
+                    return points[minIndices[0][index]]
+            elif direction == Action.DOWN:
+                if(points[minIndices[0][index]].x == snake.head.x and points[minIndices[0][index]].y <= snake.head.y):
+                    return points[minIndices[0][index]]
+            elif direction == Action.RIGHT:
+                if(points[minIndices[0][index]].y == snake.head.y and points[minIndices[0][index]].x >= snake.head.x):
+                    return points[minIndices[0][index]]
+            elif direction == Action.LEFT:
+                if(points[minIndices[0][index]].y == snake.head.y and points[minIndices[0][index]].x <= snake.head.x):
+                    return points[minIndices[0][index]]
+
+        return points[minIndices[0][0]]
+
+def findNearestWall(snake, gridSize = 50):   # checks the perpendicular distance from the
+    points = []                             # snake's head to all the walls and returns
+    points.append(Point(0, snake.head.y))         # minimum of those
+    points.append(Point(snake.head.x, 0))
+    points.append(Point(gridSize, snake.head.y))
+    points.append(Point(snake.head.x, gridSize))
+
+    minDistPoint = calculateMinDistPoint(snake, points)
+    return minDistPoint
+
+def findOtherSnakeNearestPoint(snake1, snake2): # snake2's nearest body point to the head of snake1
+    body = [snake2.head]
+    body.extend(snake2.joints)
+    body.append(snake2.end)
+    points = Point.returnBodyPoints(body)
+
+    minDistPoint = calculateMinDistPoint(snake1, points)
+    return minDistPoint
+
 def getAbsoluteStateForSingleAgent(snake, k = 3):
     state = []
-    state.append(snake.head)  # head
+    state.append(snake.head)    # head
 
     if(len(foodList)):          # k nearest points
         state.extend(findKNearestPoints(snake.head, k))
@@ -70,7 +123,7 @@ def getAbsoluteStateForSingleAgent(snake, k = 3):
 
     return state
 
-def getRelativeStateForSingleAgent(snake, k = 3):
+def getRelativeStateForSingleAgent(snake, gridSize, k = 3):
     state = []
 
     if(len(foodList)):          # k nearest points
@@ -81,5 +134,46 @@ def getRelativeStateForSingleAgent(snake, k = 3):
         state.extend(relativeFoodPoints)
 
     state.append(findSnakeDirection(snake))   # direction
+
+    state.append(relativePoints(snake.head,findNearestWall(snake, gridSize)))  # nearest wall point
+
+    return state
+
+def getAbsoluteStateForMultipleAgents(snake, agentList, k = 3):
+    state = []
+    state.append(snake.head)    # head
+
+    if(len(foodList)):          # k nearest points
+        state.extend(findKNearestPoints(snake.head, k))
+
+    state.append(findSnakeDirection(snake))   # direction
+
+    for agent in agentList:
+        state.append(agent.head)    # other agent's head
+        state.append(findOtherSnakeNearestPoint(snake, agent)) # other agent's nearest body point
+        state.append(findSnakeDirection(agent))   # direction of the other agent
+        state.append(findOtherSnakeNearestPoint(agent, snake))  # nearest body point of the snake to the other agent's head
+
+    return state
+
+def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
+    state = []
+
+    if(len(foodList)):          # k nearest points
+        relativeFoodPoints = []
+        absoluteFoodPoints = findKNearestPoints(snake.head, k)
+        for point in absoluteFoodPoints:
+            relativeFoodPoints.append(relativePoints(snake.head, point))
+        state.extend(relativeFoodPoints)
+
+    state.append(findSnakeDirection(snake))   # direction
+
+    for agent in agentList:
+        state.append(relativePoints(snake.head, agent.head))    # other agent's head
+        state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(snake, agent))) # other agent's nearest  body point
+        state.append(findSnakeDirection(agent))   # direction of the other agent
+        state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(agent, snake)))  # nearest body point of the snake to the other agent's head
+
+    state.append(relativePoints(snake.head,findNearestWall(snake, gridSize)))  # nearest wall point
 
     return state
