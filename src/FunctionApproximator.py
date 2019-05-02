@@ -85,68 +85,26 @@ class NeuralNetwork:
     def max_Q(self, sess, state):
         return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
 
-    def get_gradients(self, sess, state, action, reward, next_state=None):
-        if next_state is not None:
-            best_q_value = [[ self.max_Q(sess, next_state) ]]
-        else:
-            best_q_value = [[0]]
+    def get_gradients(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : input_data,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
-                            self.model["best_Q"] : best_q_value}
+                            self.model["best_Q"] : next_state_Q}
         return sess.run(self.model["gradient"], feed_dict=arg_dict)
 
-    def update_gradient(self, sess, state, action, reward, next_state=None):
-        if next_state is not None:
-            best_q_value = [[ self.max_Q(sess, next_state) ]]
-        else:
-            best_q_value = [[0]]
+    def update_gradient(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : input_data,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
-                            self.model["best_Q"] : best_q_value}
+                            self.model["best_Q"] : next_state_Q}
         return sess.run(self.model["update_gradient"], feed_dict=arg_dict)
 
     def reset_accumulator(self, sess):
         return sess.run(self.model["reset_accum"])
 
-    def train(self, sess, state, action, reward, next_state=None):
-        if next_state is not None:
-            best_q_value = [[ self.max_Q(sess, next_state) ]]
-        else:
-            best_q_value = [[0]]
+    def train(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : input_data,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
-                            self.model["best_Q"] : best_q_value}
+                            self.model["best_Q"] : next_state_Q}
         return sess.run(self.model["train"], feed_dict=arg_dict)
-
-if __name__=="__main__":
-    import numpy as np
-
-    nn1 = NeuralNetwork(3)
-    nn2 = NeuralNetwork(3)
-    sess1 = tf.Session(graph=nn1.graph)
-    sess2 = tf.Session(graph=nn2.graph)
-
-    input_data = np.random.rand(1,3, 2)
-    action = [[3]]
-    reward = [[-1]]
-
-    nn1.init(sess1)
-    nn2.init(sess2)
-    nn1.save_model(sess1, "a.ckpt")     # if you comment out this line and the next, the outputs below will differ
-    nn2.restore_model(sess2, "a.ckpt") # else they will be the same
-    print "Output = " + str(nn1.Q(sess1, input_data, action)[0][0])
-    print "Output = " + str(nn2.Q(sess2, input_data, action)[0][0])
-
-    print "Normal gradient = " + str(nn1.get_gradients(sess1, input_data, action, reward)[0][0])
-    for _ in xrange(10):
-        print "Update = " + str(nn1.update_gradient(sess1, input_data, action, reward, input_data)[0][0])
-    print "Train = " + str(nn1.train(sess1, input_data, action, reward, input_data))
-    print "Clear = " + str(nn1.reset_accumulator(sess1))
-    print "Save = " + str(nn1.save_model(sess1, "b.ckpt"))
-    print "Complete"
-
-    sess1.close()
-    sess2.close() # remember to close the sessions
