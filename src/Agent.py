@@ -123,7 +123,7 @@ def getAbsoluteStateForSingleAgent(snake, k = 3):
 
     return state
 
-def getRelativeStateForSingleAgent(snake, k = 3, gridSize):
+def getRelativeStateForSingleAgent(snake, gridSize, k = 3):
     state = []
 
     if(len(foodList)):          # k nearest points
@@ -156,7 +156,7 @@ def getAbsoluteStateForMultipleAgents(snake, agentList, k = 3):
 
     return state
 
-def getRelativeStateForMultipleAgents(snake, agentList, k = 3, gridSize):
+def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
     state = []
 
     if(len(foodList)):          # k nearest points
