@@ -22,7 +22,7 @@ def epsilon_greedy_action(snake, sess, nn, input_data, epsilon):
 def best_q(snake, sess, nn, input_data):
     return nn.max_permissible_Q(sess, input_data, snake.permissible_actions())[1]
 
-def mainAlgorithm (max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120):
+def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120):
     policyNetwork = []
     targetNetwork = []
     policySess = []
@@ -75,7 +75,11 @@ def mainAlgorithm (max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, g
                     pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                     # final_state[idx] = Agent.getRelativeStateForMultipleAgents(g.snakes[idx],pruned_snake_list)
                     final_state = Agent.getRelativeStateForSingleAgent(g.snakes[idx])
-                    single_step_reward = reward if snake_list[idx].alive else penalty # if it was alive in the past state but it isn't after the move, then it just died and deserves a penalty
+                    single_step_reward = 0
+                    if not snake_list[idx].alive: # if it was alive in the past state but it isn't after the move, then it just died and deserves a penalty
+                        single_step_reward = penalty
+                    elif snake_list[idx].didEatFood(): # it ate food, boost its reward!
+                        single_step_reward = reward
 
                     if (not episodeRunning or not(g.snakes[idx].Alive)) or (time_steps % asyncUpdate == 0): # Training is done on the snake only on terminal state
                         policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward)
