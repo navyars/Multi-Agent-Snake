@@ -82,6 +82,13 @@ class NeuralNetwork:
     def Q(self, sess, state, action):
         return sess.run(self.model["Q_value"], feed_dict={ self.model["state"] : state, self.model["action"] : action })
 
+    def max_permissible_Q(self, sess, state, permissible_actions):
+        Q_values = sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state })[0]
+        permissible_actions = map(int, permissible_actions)
+        permissible_Q = Q_values[permissible_actions]
+        best_action = np.argmax(permissible_Q)
+        return (best_action, permissible_Q[best_action])
+
     def max_Q(self, sess, state):
         return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
 

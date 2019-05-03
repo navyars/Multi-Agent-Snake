@@ -23,7 +23,8 @@ class Game:
 
     def move(self, actionsList=[]):
         """
-        Takes in a list of actions corresponding to each snake in the game
+        Takes in a list of actions corresponding to each snake in the game.
+        If a snake is dead, then its corresponding position in actionsList simply holds None.
         Returns boolean indicating whether the game has ended
         """
         assert len(actionsList)==len(self.snakes), "Deficiency of actions provided."
@@ -32,7 +33,8 @@ class Game:
         for i in xrange(len(self.snakes)):
             s = self.snakes[i]
             permissible_actions = s.permissible_actions()
-            action_validity_check.append( actionsList[i] in permissible_actions )
+            if actionsList[i] is not None:
+                action_validity_check.append( actionsList[i] in permissible_actions )
         assert all(action_validity_check), "At least one action is invalid"
 
         self.time_step += 1
@@ -41,8 +43,9 @@ class Game:
             s = self.snakes[i]
             a = actionsList[i]
 
-            s.moveInDirection(a)
-            s.didEatFood()
+            if a is not None:
+                s.moveInDirection(a)
+                s.didEatFood()
 
         for i in xrange(len(self.snakes)):
             for j in xrange(i+1, len(self.snakes)):
@@ -50,7 +53,7 @@ class Game:
                     self.snakes[i].backtrack()
                     self.snakes[i].killSnake()
 
-        return (self.time_step == self.gameLength or all([not s.alive for s in self.snakes]))
+        return not (self.time_step == self.gameLength or all([not s.alive for s in self.snakes]))
 
     def endGame(self):
         return [s.score for s in self.snakes]
