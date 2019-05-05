@@ -9,7 +9,7 @@ class Game:
         for idx in xrange(numOfSnakes):
             self.snakes.append( Snake(gridSize, idx) )
 
-        Food.createFood(10)
+        Food.createFood(10, self.snakes)
         self.gameLength = maxEpisodeLength
         self.time_step = 0
         return
