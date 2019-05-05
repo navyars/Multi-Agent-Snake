@@ -177,3 +177,24 @@ def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
     state.append(relativePoints(snake.head,findNearestWall(snake, gridSize)))  # nearest wall point
 
     return state
+
+def getState(snake, agentList, gridSize, mode, numSnakes, k): # mode - 'relative'/'absolute', numSnakes - 'single'/'multi'
+    state = []
+    if mode == 'absolute' and numSnakes == 'single':
+        state.extend(getAbsoluteStateForSingleAgent(snake, k))
+    elif mode == 'absolute' and numSnakes == 'multi':
+        state.extend(getAbsoluteStateForMultipleAgents(snake, agentList, k))
+    elif mode == 'relative' and numSnakes == 'single':
+        state.extend(getRelativeStateForSingleAgent(snake, gridSize, k))
+    elif mode == 'relative' and numSnakes == 'multi':
+        state.extend(getRelativeStateForMultipleAgents(snake, agentList, gridSize, k))
+
+    flatState = []
+    for entry in state:
+        if isinstance(entry, Point):
+            flatState.append(entry.x)
+            flatState.append(entry.y)
+        elif isinstance(entry, Action):
+            flatState.append(entry.value)
+
+    return flatState
