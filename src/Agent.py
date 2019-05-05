@@ -178,15 +178,21 @@ def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
 
     return state
 
-def getState(snake, agentList, gridSize, mode, numSnakes, k): # mode - 'relative'/'absolute', numSnakes - 'single'/'multi'
+def getStateLength(multipleAgents):
+    if multipleAgents == False:
+        return 9
+    elif multipleAgents == True:
+        return 16
+
+def getState(snake, agentList, gridSize, relative, multipleAgents, k): # mode - 'relative'/'absolute', numSnakes - 'single'/'multi'
     state = []
-    if mode == 'absolute' and numSnakes == 'single':
+    if relative == False and multipleAgents == False:
         state.extend(getAbsoluteStateForSingleAgent(snake, k))
-    elif mode == 'absolute' and numSnakes == 'multi':
+    elif relative == False and multipleAgents == True:
         state.extend(getAbsoluteStateForMultipleAgents(snake, agentList, k))
-    elif mode == 'relative' and numSnakes == 'single':
+    elif relative == True and multipleAgents == False:
         state.extend(getRelativeStateForSingleAgent(snake, gridSize, k))
-    elif mode == 'relative' and numSnakes == 'multi':
+    elif relative == True and multipleAgents == True:
         state.extend(getRelativeStateForMultipleAgents(snake, agentList, gridSize, k))
 
     flatState = []
