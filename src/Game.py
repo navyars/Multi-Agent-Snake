@@ -7,7 +7,7 @@ class Game:
     def __init__(self, numOfSnakes=2, gridSize=10, maxEpisodeLength=300):
         self.snakes = []
         for idx in range(numOfSnakes):
-            self.snakes.append( Snake(gridSize, idx) )
+            self.snakes.append(Snake(gridSize, idx) )
 
         Food.createFood(10, self.snakes)
         self.gameLength = maxEpisodeLength

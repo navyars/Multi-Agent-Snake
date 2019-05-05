@@ -93,7 +93,7 @@ class NeuralNetwork:
     def max_Q(self, sess, state):
         return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
 
-    def get_gradients(self, sess, state, action, reward, next_state_Q=[[0]]):
+    def get_gradients(self, sess, state, action, reward, next_state_Q=0):
         arg_dict = {self.model["state"] : input_data,
                             self.model["action"] : action,
                             self.model["reward"] : reward,

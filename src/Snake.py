@@ -51,7 +51,7 @@ class Snake:
         if(self.head in foodList):
             self.score = self.score + 1
             self.growSnake()
-            eatFood(self.head)
+            eatFood(self.head, Snake.snakeList)
             return True
         return False
 
