@@ -186,6 +186,8 @@ def getStateLength(multipleAgents):
 
 def getState(snake, agentList, gridSize, relative, multipleAgents, k): # mode - 'relative'/'absolute', numSnakes - 'single'/'multi'
     state = []
+    if snake.alive == False:
+        return [-1] * getStateLength(multipleAgents)
     if relative == False and multipleAgents == False:
         state.extend(getAbsoluteStateForSingleAgent(snake, k))
     elif relative == False and multipleAgents == True:
