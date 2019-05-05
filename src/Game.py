@@ -37,12 +37,16 @@ class Game:
 
         self.time_step += 1
 
+        single_step_rewards = []
         for i in xrange(len(actionsList)):
             s = self.snakes[i]
             a = actionsList[i]
 
             s.moveInDirection(a)
-            s.didEatFood()
+            if s.didEatFood():
+                single_step_rewards.append(1)
+            else:
+                single_step_rewards.append(0)
 
         for i in xrange(len(self.snakes)):
             for j in xrange(i+1, len(self.snakes)):
@@ -50,7 +54,8 @@ class Game:
                     self.snakes[i].backtrack()
                     self.snakes[i].killSnake()
 
-        return (self.time_step == self.gameLength or all([not s.alive for s in self.snakes]))
+        return ( single_step_rewards, not (self.time_step == self.gameLength or all([not s.alive for s in self.snakes])) )
 
     def endGame(self):
+        Food.foodList = []
         return [s.score for s in self.snakes]

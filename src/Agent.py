@@ -149,10 +149,13 @@ def getAbsoluteStateForMultipleAgents(snake, agentList, k = 3):
     state.append(findSnakeDirection(snake))   # direction
 
     for agent in agentList:
-        state.append(agent.head)    # other agent's head
-        state.append(findOtherSnakeNearestPoint(snake, agent)) # other agent's nearest body point
-        state.append(findSnakeDirection(agent))   # direction of the other agent
-        state.append(findOtherSnakeNearestPoint(agent, snake))  # nearest body point of the snake to the other agent's head
+        if agent.alive == True:
+            state.append(agent.head)    # other agent's head
+            state.append(findOtherSnakeNearestPoint(snake, agent)) # other agent's nearest body point
+            state.append(findSnakeDirection(agent))   # direction of the other agent
+            state.append(findOtherSnakeNearestPoint(agent, snake))  # nearest body point of the snake to the other agent's head
+        else:
+            state.extend([Point(-1, -1), Point(-1, -1), -1, Point(-1, -1)])
 
     return state
 
@@ -169,11 +172,45 @@ def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
     state.append(findSnakeDirection(snake))   # direction
 
     for agent in agentList:
-        state.append(relativePoints(snake.head, agent.head))    # other agent's head
-        state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(snake, agent))) # other agent's nearest  body point
-        state.append(findSnakeDirection(agent))   # direction of the other agent
-        state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(agent, snake)))  # nearest body point of the snake to the other agent's head
+        if agent.alive == True:
+            state.append(relativePoints(snake.head, agent.head))    # other agent's head
+            state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(snake, agent))) # other agent's nearest  body point
+            state.append(findSnakeDirection(agent))   # direction of the other agent
+            state.append(relativePoints(snake.head,findOtherSnakeNearestPoint(agent, snake)))  # nearest body point of the snake to the other agent's head
+        else:
+            state.extend([Point(-1, -1), Point(-1, -1), -1, Point(-1, -1)])
 
     state.append(relativePoints(snake.head,findNearestWall(snake, gridSize)))  # nearest wall point
 
     return state
+
+def getStateLength(multipleAgents):
+    if multipleAgents == False:
+        return 9
+    elif multipleAgents == True:
+        return 16
+
+def getState(snake, agentList, gridSize, relative, multipleAgents, k):
+    state = []
+    if snake.alive == False:
+        return [-1] * getStateLength(multipleAgents)
+    if relative == False and multipleAgents == False:
+        state.extend(getAbsoluteStateForSingleAgent(snake, k))
+    elif relative == False and multipleAgents == True:
+        state.extend(getAbsoluteStateForMultipleAgents(snake, agentList, k))
+    elif relative == True and multipleAgents == False:
+        state.extend(getRelativeStateForSingleAgent(snake, gridSize, k))
+    elif relative == True and multipleAgents == True:
+        state.extend(getRelativeStateForMultipleAgents(snake, agentList, gridSize, k))
+
+    flatState = []
+    for entry in state:
+        if isinstance(entry, Point):
+            flatState.append(entry.x)
+            flatState.append(entry.y)
+        elif isinstance(entry, Action):
+            flatState.append(entry.value)
+        else:
+            flatState.append(entry)
+
+    return flatState

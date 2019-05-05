@@ -13,7 +13,6 @@ def createFood(n, snakes=[]):
         occupiedPoints.extend(bodyPoints)
     occupiedPoints = set(occupiedPoints)
 
-
     for i in range(n):
         while True:
             x = randint(1, gridSize-1)
@@ -28,6 +27,8 @@ def addFoodToList(pointList):
         foodList.append(p)
 
 def eatFood(food, snakes=[]):
-    foodList.remove(food)
+    for i, f in enumerate(foodList):
+        if f == food:
+            del foodList[i]
     if(len(foodList) < maximumFood):
         createFood(maximumFood - len(foodList), snakes)
