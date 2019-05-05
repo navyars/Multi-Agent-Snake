@@ -11,7 +11,6 @@ def createFood(n, snakes=[]):
         body = snake.getBodyList()
         bodyPoints = Point.returnBodyPoints(body)
         occupiedPoints.extend(bodyPoints)
-    occupiedPoints = set(occupiedPoints)
 
     for i in range(n):
         while True:

@@ -14,15 +14,14 @@ class Snake:
             body = snake.getBodyList()
             bodyPoints = Point.returnBodyPoints(body)
             occupiedPoints.extend(bodyPoints)
-        occupiedPoints = set(occupiedPoints)
 
         while True:
             self.head = Point(randint(10, gridSize - 10), randint(10, gridSize - 10)) # generate point with at least 10 units gap from any wall
             self.end = Point( self.head.x - 5, self.head.y )
             self.joints = []
             body = self.getBodyList()
-            bodyPoints = set(Point.returnBodyPoints(body))
-            if not bool(bodyPoints.intersection(occupiedPoints)):
+            bodyPoints = Point.returnBodyPoints(body)
+            if not bool(self.lists_overlap(bodyPoints, occupiedPoints)):
                 break
 
         self.id = identity
@@ -41,6 +40,12 @@ class Snake:
         else:
             return "Snake " + str(self.id) + ": Dead"
 
+    def lists_overlap(self, list1, list2):
+        for point in list1:
+            if point in list2:
+                return True
+            return False
+
     def getBodyList(self):
         body = [self.head]
         body.extend(self.joints)
@@ -48,7 +53,7 @@ class Snake:
         return body
 
     def didEatFood(self):
-        if True in [Point.compare(f, self.head) for f in foodList]:
+        if(self.head in foodList):
             self.score = self.score + 1
             self.growSnake()
             eatFood(self.head, Snake.snakeList)
@@ -101,7 +106,7 @@ class Snake:
 
             direction = self.findDirection(self.joints[-1], self.end)
             self.end = self._update_point(self.end, direction)
-            if Point.compare(self.end, self.joints[-1]):# pop joint if end has reached it
+            if (self.end.x == self.joints[-1].x) and (self.end.y == self.joints[-1].y): # pop joint if end has reached it
                 self.joints = self.joints[:-1]
 
         # check if the snake has collided with wall or other snakes. If true, undo movement and kill it
