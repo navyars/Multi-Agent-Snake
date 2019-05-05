@@ -6,31 +6,52 @@ from Food import *
 from Constants import *
 
 class Snake:
+    snakeList = []
+
     def __init__(self, gridSize, identity):
-        self.head = Point(randint(10, gridSize - 10), randint(10, gridSize - 10)) # generate point with at least 10 units gap from any wall
-        self.end = Point( self.head.x - 5, self.head.y )
-        self.joints = []
+        occupiedPoints = []
+        for snake in Snake.snakeList:
+            body = snake.getBodyList()
+            bodyPoints = Point.returnBodyPoints(body)
+            occupiedPoints.extend(bodyPoints)
+        occupiedPoints = set(occupiedPoints)
+
+        while True:
+            self.head = Point(randint(10, gridSize - 10), randint(10, gridSize - 10)) # generate point with at least 10 units gap from any wall
+            self.end = Point( self.head.x - 5, self.head.y )
+            self.joints = []
+            body = self.getBodyList()
+            bodyPoints = set(Point.returnBodyPoints(body))
+            if not bool(bodyPoints.intersection(occupiedPoints)):
+                break
+
         self.id = identity
         self.alive = True
         self.score = 0
         self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
+
+        Snake.snakeList.append(self)
         return
 
     def __str__(self):
         if self.alive:
-            body = [self.head]
-            body.extend(self.joints)
-            body.append(self.end)
+            body = self.getBodyList()
             body_str = str(map(str,body))
             return "Snake " + str(self.id) + ": " + body_str
         else:
             return "Snake " + str(self.id) + ": Dead"
 
+    def getBodyList(self):
+        body = [self.head]
+        body.extend(self.joints)
+        body.append(self.end)
+        return body
+
     def didEatFood(self):
         if True in [Point.compare(f, self.head) for f in foodList]:
             self.score = self.score + 1
             self.growSnake()
-            eatFood(self.head)
+            eatFood(self.head, Snake.snakeList)
 
     def didHitWall(self):
         if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
@@ -89,9 +110,7 @@ class Snake:
         return
 
     def didHitSnake(self, opponent_snake):
-        body = [opponent_snake.head]
-        body.extend(opponent_snake.joints)
-        body.append(opponent_snake.end)
+        body = opponent_snake.getBodyList()
 
         p = self.head
         if p == opponent_snake.head :
@@ -140,3 +159,15 @@ class Snake:
             if act != direction:
                 actions.append(act)
         return actions
+
+    def killSnake(self):
+        self.alive = False
+
+        body = self.getBodyList()
+        points = Point.returnBodyPoints(body)
+        addFoodToList(points)
+
+        Snake.snakeList.remove(self)
+        del self.head
+        del self.end
+        del self.joints
