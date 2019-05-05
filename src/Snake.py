@@ -99,7 +99,7 @@ class Snake:
         if p == opponent_snake.head :
             return (self.score <= opponent_snake.score) # if heads collide, the larger snake remains. If the scores are equal, then both snakes should die.
 
-        for i in xrange(len(body)-1):
+        for i in range(len(body)-1):
             p1 = body[i]
             p2 = body[i+1]
             if p1.x == p2.x: #vertical line
