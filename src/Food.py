@@ -30,5 +30,6 @@ def eatFood(food, snakes=[]):
     for i, f in enumerate(foodList):
         if f == food:
             del foodList[i]
+
     if(len(foodList) < maximumFood):
         createFood(maximumFood - len(foodList), snakes)

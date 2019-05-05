@@ -13,6 +13,7 @@ class Point:
     def __str__(self):
         return "({}, {})".format(self.x, self.y)
 
+
     def __eq__(self, p):
         return self.x == p.x and self.y == p.y
 
