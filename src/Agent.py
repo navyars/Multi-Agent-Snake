@@ -190,7 +190,7 @@ def getStateLength(multipleAgents):
     elif multipleAgents == True:
         return 16
 
-def getState(snake, agentList, gridSize, relative, multipleAgents, k): # mode - 'relative'/'absolute', numSnakes - 'single'/'multi'
+def getState(snake, agentList, gridSize, relative, multipleAgents, k):
     state = []
     if snake.alive == False:
         return [-1] * getStateLength(multipleAgents)
@@ -210,7 +210,7 @@ def getState(snake, agentList, gridSize, relative, multipleAgents, k): # mode - 
             flatState.append(entry.y)
         elif isinstance(entry, Action):
             flatState.append(entry.value)
-        else
+        else:
             flatState.append(entry)
 
     return flatState
