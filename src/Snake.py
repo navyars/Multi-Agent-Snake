@@ -22,7 +22,7 @@ class Snake:
             self.joints = []
             body = self.getBodyList()
             bodyPoints = set(Point.returnBodyPoints(body))
-            if bool(bodyPoints.intersection(occupiedPoints)):
+            if not bool(bodyPoints.intersection(occupiedPoints)):
                 break
 
         self.id = identity
@@ -167,6 +167,7 @@ class Snake:
         points = Point.returnBodyPoints(body)
         addFoodToList(points)
 
+        Snake.snakeList.remove(self)
         del self.head
         del self.end
         del self.joints

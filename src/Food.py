@@ -13,12 +13,15 @@ def createFood(n, snakes=[]):
         occupiedPoints.extend(bodyPoints)
     occupiedPoints = set(occupiedPoints)
 
+
     for i in range(n):
-        x = randint(1, gridSize-1)
-        y = randint(1, gridSize-1)
-        p = Point(x,y)
-        if p not in occupiedPoints and p not in foodList:
-            foodList.append(p)
+        while True:
+            x = randint(1, gridSize-1)
+            y = randint(1, gridSize-1)
+            p = Point(x,y)
+            if p not in occupiedPoints and p not in foodList:
+                foodList.append(p)
+                break
 
 def addFoodToList(pointList):
     for p in pointList:
