@@ -9,7 +9,7 @@ class Game:
         for idx in range(numOfSnakes):
             self.snakes.append( Snake(gridSize, idx) )
 
-        Food.createFood(10)
+        Food.createFood(10, self.snakes)
         self.gameLength = maxEpisodeLength
         self.time_step = 0
         return
@@ -39,13 +39,20 @@ class Game:
 
         self.time_step += 1
 
+        single_step_rewards = []
         for i in range(len(actionsList)):
             s = self.snakes[i]
             a = actionsList[i]
 
             if a is not None:
                 s.moveInDirection(a)
-                s.didEatFood()
+                if s.alive:
+                  if s.didEatFood():
+                    single_step_rewards.append(1)
+                  else:
+                    single_step_rewards.append(0)
+                else:
+                  single_step_rewards.append(-10)
 
         for i in range(len(self.snakes)):
             for j in range(i+1, len(self.snakes)):
@@ -53,7 +60,8 @@ class Game:
                     self.snakes[i].backtrack()
                     self.snakes[i].killSnake()
 
-        return not (self.time_step == self.gameLength or all([not s.alive for s in self.snakes]))
+        return ( single_step_rewards, not (self.time_step == self.gameLength or all([not s.alive for s in self.snakes])) )
 
     def endGame(self):
+        Food.foodList = []
         return [s.score for s in self.snakes]
