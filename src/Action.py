@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class Action(Enum):
+class Action(IntEnum):
     TOP = 0
     DOWN = 1
     LEFT = 2

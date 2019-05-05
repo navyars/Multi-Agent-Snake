@@ -52,6 +52,8 @@ class Snake:
             self.score = self.score + 1
             self.growSnake()
             eatFood(self.head, Snake.snakeList)
+            return True
+        return False
 
     def didHitWall(self):
         if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
