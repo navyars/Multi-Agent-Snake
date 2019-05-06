@@ -52,7 +52,7 @@ def findKNearestPoints(head, k):
 
     for i in range(k):
         nearestPoints.append(foodList[argmin[i]])
-    
+
     return nearestPoints
 
 def findSnakeDirection(snake):
@@ -213,4 +213,4 @@ def getState(snake, agentList, gridSize, relative, multipleAgents, k):
         else:
             flatState.append(entry)
 
-    return flatState
+    return np.asarray(flatState)

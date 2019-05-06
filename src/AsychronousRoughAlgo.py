@@ -6,14 +6,16 @@ from Constants import *
 import numpy as np
 import random
 
+from Action import Action
 from threading import Lock, Thread
-from queue import Queue
+from Queue import Queue
 from multiprocessing import cpu_count
 
-def epsilon_greedy_action(snake, sess, nn, input_data, epsilon):
+def epsilon_greedy_action(snake, sess, nn, state, epsilon):
         possible_actions = snake.permissible_actions()
-        best_action, _ = nn.max_permissible_Q(sess, input_data, possible_actions)
-        possible_actions.remove(best_action)
+        best_action, _ = nn.max_permissible_Q(sess, state, possible_actions)
+        best_action = Action(best_action)
+        # possible_actions.remove(best_action)
         prob = random.uniform(0, 1)
         if prob <= epsilon:
             return best_action
@@ -34,6 +36,9 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
             if e < 1:
                 epsilon.append(e)
                 break
+
+    multipleAgents = numberOfSnakes > 1
+    relativeState = False
     while True:
         g = Game.Game(numberOfSnakes, gridSize, globalEpisodeLength)
         #Start a Game
@@ -45,9 +50,8 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
         while episodeRunning: #Meaning in an episode
             for idx in range(numberOfSnakes):
                 pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
-                #initial_state[idx] = Agent.getRelativeStateForMultipleAgents(g.snakes[idx],pruned_snake_list)
                 if g.snakes[idx].alive:
-                    initial_state[idx] = Agent.getRelativeStateForSingleAgent(g.snakes[idx], 50) #Can either be this or the above line
+                    initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3)
                     actions_taken[idx] = epsilon_greedy_action(g.snakes[idx], policySess[idx], policyNetwork[idx], initial_state[idx], epsilon[idx])
                     pastStateAlive[idx] = True
                 else:
@@ -55,9 +59,9 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
                     pastStateAlive[idx] = False
 
             try:
-                episodeRunning = g.move(actions_taken)
+                single_step_reward, episodeRunning = g.move(actions_taken)
             except AssertionError:
-                print("Error making moves {} in game :\n{}".format(actionsList, g))
+                print("Error making moves {} in game :\n{}".format(actions_taken, g))
 
             #Now we transition to the next state
             time_steps += 1
@@ -67,33 +71,26 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
             queue.put(T)
             lock.release()
 
-
             for idx in range(numberOfSnakes):
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
                     pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
-                    # final_state[idx] = Agent.getRelativeStateForMultipleAgents(g.snakes[idx],pruned_snake_list)
-                    final_state = Agent.getRelativeStateForSingleAgent(g.snakes[idx], 50)
-                    single_step_reward = 0
-                    if not snake_list[idx].alive: # if it was alive in the past state but it isn't after the move, then it just died and deserves a penalty
-                        single_step_reward = penalty
-                    elif snake_list[idx].didEatFood(): # it ate food, boost its reward!
-                        single_step_reward = reward
+                    final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3)
 
                     if not episodeRunning or not g.snakes[idx].alive: # Training is done on the snake only on terminal state
                         lock.acquire()
-                        policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward)
-                        policyNetwork[idx].train(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward)
-                        policyNetwork.reset_accumulator(policySess[idx])
+                        policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward[idx])
+                        policyNetwork[idx].train(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward[idx])
+                        policyNetwork[idx].reset_accumulator(policySess[idx])
                         lock.release()
                     else: #Else only an update is done
                         next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], final_state)
                         lock.acquire()
                         policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx],
-                                                           single_step_reward, next_state_best_Q)
+                                                           single_step_reward[idx], next_state_best_Q)
                         if time_steps % asyncUpdate == 0:
                             policyNetwork[idx].train(policySess[idx], initial_state[idx], actions_taken[idx],
-                                                     single_step_reward, next_state_best_Q)
-                            policyNetwork.reset_accumulator(policySess[idx])
+                                                     single_step_reward[idx], next_state_best_Q)
+                            policyNetwork[idx].reset_accumulator(policySess[idx])
                         lock.release()
 
                     T = queue.get()
@@ -140,4 +137,4 @@ def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, gl
     print("main complete")
 
 if __name__ == '__main__':
-    mainAlgorithm(max_time_steps=100)
+    mainAlgorithm(max_time_steps=500, reward=1, penalty=-10, asyncUpdate=20, globalUpdate=60)
