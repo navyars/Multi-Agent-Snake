@@ -43,7 +43,7 @@ def getAction(snake, state, theta):
     for action in snake.permissible_actions():
         actionProbability.append(getPolicy(snake, state, theta, action))
         actions.append(action)
-    return np.random.choice(actions, p=actionProbability)
+    return Action(np.random.choice(actions, p=actionProbability))
 
 def getGradientForPolicy(snake, state, action, theta):
     featureVector = getFeatureVector(state, action)
