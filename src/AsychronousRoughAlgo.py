@@ -51,7 +51,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
             for idx in range(numberOfSnakes):
                 pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                 if g.snakes[idx].alive:
-                    initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3)
+                    initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3, normalize=True)
                     actions_taken[idx] = epsilon_greedy_action(g.snakes[idx], policySess[idx], policyNetwork[idx], initial_state[idx], epsilon[idx])
                     pastStateAlive[idx] = True
                 else:
@@ -74,7 +74,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
             for idx in range(numberOfSnakes):
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
                     pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
-                    final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3)
+                    final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, 3, normalize=True)
 
                     if not episodeRunning or not g.snakes[idx].alive: # Training is done on the snake only on terminal state
                         lock.acquire()
