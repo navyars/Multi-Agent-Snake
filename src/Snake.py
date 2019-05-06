@@ -44,7 +44,7 @@ class Snake:
         for point in list1:
             if point in list2:
                 return True
-            return False
+        return False
 
     def getBodyList(self):
         body = [self.head]
