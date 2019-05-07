@@ -29,7 +29,7 @@ def getPolicy(snake, state, theta, action):
     numericalPreferenceList = getNumericalPreferences(snake, state, theta)
 
     return (np.exp(numericalPreference) / np.sum( np.exp(numericalPreferenceList) ))    # e^h(s, a, theta)/ Sum over b(e^h(s, b, theta))
-    
+
 def getValueFunction(state, w):
     if np.all(np.asarray(state) == -1):
         return 0
@@ -73,10 +73,10 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                     stateList.append([-1] * getStateLength(multipleAgents))
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k))
+                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
                 action = getAction(snake, stateList[i], theta[i])
                 actionList.append(action)
-            
+
             singleStepRewards, episodeRunning = g.move(actionList)
             timeSteps += 1
 
@@ -86,13 +86,13 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 state = stateList[i]
                 action = actionList[i]
-                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k)
+                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k)
                 reward = singleStepRewards[i]
                 delta = reward + gamma * getValueFunction(nextState, w[i]) - getValueFunction(state, w[i])
                 w[i] = np.add(w[i], (alphaW * delta) * np.asarray(state))
                 theta[i] += alphaTheta * I * delta * getGradientForPolicy(snake, state, action, theta[i])
                 I *= gamma
-            
+
             if timeSteps > maxTimeSteps:
                 break
 
@@ -114,8 +114,8 @@ def inference(gridSize, relative, multipleAgents, k):
                 stateList.append([-1] * getStateLength(multipleAgents))
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k))
+            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
             action = getAction(snake, stateList[i], theta[i])
             actionList.append(action)
-        
+
         singleStepRewards, episodeRunning = g.move(actionList)

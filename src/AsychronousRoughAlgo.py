@@ -47,7 +47,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
                 pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                 #initial_state[idx] = Agent.getRelativeStateForMultipleAgents(g.snakes[idx],pruned_snake_list)
                 if g.snakes[idx].alive:
-                    initial_state[idx] = Agent.getRelativeStateForSingleAgent(g.snakes[idx], 50) #Can either be this or the above line
+                    initial_state[idx] = Agent.getRelativeStateForSingleAgent(g.snakes[idx], g.food, 50) #Can either be this or the above line
                     actions_taken[idx] = epsilon_greedy_action(g.snakes[idx], policySess[idx], policyNetwork[idx], initial_state[idx], epsilon[idx])
                     pastStateAlive[idx] = True
                 else:
@@ -72,7 +72,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
                     pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                     # final_state[idx] = Agent.getRelativeStateForMultipleAgents(g.snakes[idx],pruned_snake_list)
-                    final_state = Agent.getRelativeStateForSingleAgent(g.snakes[idx], 50)
+                    final_state = Agent.getRelativeStateForSingleAgent(g.snakes[idx], g.food, 50)
                     single_step_reward = 0
                     if not snake_list[idx].alive: # if it was alive in the past state but it isn't after the move, then it just died and deserves a penalty
                         single_step_reward = penalty

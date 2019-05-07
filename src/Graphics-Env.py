@@ -37,7 +37,7 @@ def manual_action(g,event):
         defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].end)
     else:
         defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].joints[0])
-    
+
     if event.type == pygame.KEYDOWN:
         if keys[pygame.K_RIGHT]:
             actionsList[0] = Action.RIGHT
@@ -49,7 +49,7 @@ def manual_action(g,event):
             actionsList[0] = Action.DOWN
     else:
         actionsList[0] = defaultaction
-    return actionsList         
+    return actionsList
 
 
 def runGame():
@@ -79,7 +79,7 @@ def runGame():
             body = [s.head]
             body.extend(s.joints)
             body.append(s.end)
-            for p in Food.foodList:
+            for p in g.food.foodList:
                 pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
             """The above loop draws all the food particles as points."""
             for i in range(len(body) - 1):
