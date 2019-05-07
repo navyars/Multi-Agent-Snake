@@ -24,7 +24,7 @@ def to_pygame(p):
     return (p.x, gridSize-p.y)
 
 
-def manual_action(g,event):
+def manual_action_list(g,event):
     """
     This initialization may be a bit computation intensive, but added this line here for representation of two or more snakes
     Else can simply initialize to 0
@@ -57,14 +57,37 @@ def manual_action(g,event):
 
     return actionsList
 
+def manual_action(snake, event):
+    if snake.alive: # user's snake
+        keys = pygame.key.get_pressed()
+        if snake.joints == []:
+            defaultaction = snake.findDirection(snake.head, snake.end)
+        else:
+            defaultaction = snake.findDirection(snake.head, snake.joints[0])
 
-def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
+        action_taken = defaultaction
+        user_permissible_actions = snake.permissible_actions()
+        if event.type == pygame.KEYDOWN:
+            if keys[pygame.K_RIGHT] and Action.RIGHT in user_permissible_actions:
+                action_taken = Action.RIGHT
+            elif keys[pygame.K_LEFT] and Action.LEFT in user_permissible_actions:
+                action_taken = Action.LEFT
+            elif keys[pygame.K_UP] and Action.TOP in user_permissible_actions:
+                action_taken = Action.TOP
+            elif keys[pygame.K_DOWN] and Action.DOWN in user_permissible_actions:
+                action_taken = Action.DOWN
+    else:
+        action_taken = None
+    return action_taken
+
+
+def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
     g = Game.Game(numberOfSnakes, gridSize, globalEpisodeLength)  # Instantiating an object of class Game
     width = scalingFactor * gridSize
     height = scalingFactor * gridSize
-    pos_score_x = math.floor(width / (numberOfSnakes + 1))  # For displaying score
-    pos_score_y = math.floor(height / 20)
-    font_size = math.floor(height / 40)
+    pos_score_x = int(math.floor(width / (numberOfSnakes + 1)))  # For displaying score
+    pos_score_y = int(math.floor(height / 20))
+    font_size = int(math.floor(height / 40))
     black = (0, 0, 0)
     white = (255, 255, 255)
     red = (255, 0, 0)
@@ -98,7 +121,7 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
                     pygame.draw.line(screen, colors[idx], to_pygame(body[i]), to_pygame(body[i + 1]), 1)
                 pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
 
-        actionsList = manual_action(g, event)
+        actionsList = manual_action_list(g, event)
         """
         actionsList = rl_agent(g)
         Can also add an if condition here to have one player and one agent
@@ -112,6 +135,39 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
         clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.
     pygame.quit()
 
-    
+def displayGame(game, win, screen, colors, scalingFactor = 9):
+    width = scalingFactor * gridSize
+    height = scalingFactor * gridSize
+    pos_score_x = int(math.floor(width / (numberOfSnakes + 1)))  # For displaying score
+    pos_score_y = int(math.floor(height / 20))
+    font_size = int(math.floor(height / 40))
+    black = (0, 0, 0)
+    white = (255, 255, 255)
+    red = (255, 0, 0)
+    green = (0, 255, 0)
+
+    clock = pygame.time.Clock()
+    screen.fill(white)
+    #draw the walls
+    pygame.draw.lines(screen, black, True, [(0,0), (0,gridSize), (gridSize, gridSize), (gridSize, 0)])
+    # The below loop draws all the food particles as points.
+    for p in game.food.foodList:
+        pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
+
+    # This is for drawing the snake and also the snake's head is colored red
+    for idx in range(numberOfSnakes):
+        if game.snakes[idx].alive:
+            body = game.snakes[idx].getBodyList()
+            for i in range(len(body) - 1):
+                pygame.draw.line(screen, colors[idx], to_pygame(body[i]), to_pygame(body[i + 1]), 1)
+            pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
+
+    win.blit(pygame.transform.scale(screen, win.get_rect().size), (0, 0)) # Transforms the screen window into the win window
+    for idx in range(numberOfSnakes):
+        draw_text(win, "Snake" + str(idx) + "  " + str(game.snakes[idx].score), font_size, pos_score_x * (idx + 1), pos_score_y,black) #Displaying score
+    pygame.display.update()
+    clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.
+    return
+
 if __name__ == '__main__':
-    runGame()
+    runRandomGame()
