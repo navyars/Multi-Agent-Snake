@@ -3,6 +3,8 @@ import Game
 import Food
 import math
 import random
+import numpy as np
+
 from Action import *
 from Constants import *
 
@@ -37,7 +39,7 @@ def manual_action(g,event):
         defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].end)
     else:
         defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].joints[0])
-    
+
     if event.type == pygame.KEYDOWN:
         if keys[pygame.K_RIGHT]:
             actionsList[0] = Action.RIGHT
@@ -49,7 +51,7 @@ def manual_action(g,event):
             actionsList[0] = Action.DOWN
     else:
         actionsList[0] = defaultaction
-    return actionsList         
+    return actionsList
 
 
 def runGame():
@@ -61,11 +63,12 @@ def runGame():
     font_size = math.floor(height / 40)
     black = (0, 0, 0)
     white = (255, 255, 255)
-    red = (200, 0, 0)
-    green = (0, 200, 0)
+    red = (255, 0, 0)
+    green = (0, 255, 0)
+    colors = np.random.randint(0, 256, size=[numberOfSnakes, 3])
     crashed = False
     win = pygame.display.set_mode((scalingFactor * gridSize, scalingFactor * gridSize))  # Game Window
-    screen = pygame.Surface((gridSize, gridSize))  # Grid Screen
+    screen = pygame.Surface((gridSize+1, gridSize+1))  # Grid Screen
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
 
@@ -74,6 +77,9 @@ def runGame():
             if event.type == pygame.QUIT:
                 crashed = True
         screen.fill(white)
+        #draw the walls
+        pygame.draw.lines(screen, black, True, [(0,0), (0,gridSize), (gridSize, gridSize), (gridSize, 0)])
+
         for idx in range(numberOfSnakes):
             s = g.snakes[idx]
             body = [s.head]
@@ -83,7 +89,7 @@ def runGame():
                 pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
             """The above loop draws all the food particles as points."""
             for i in range(len(body) - 1):
-                pygame.draw.line(screen, black, to_pygame(body[i]), to_pygame(body[i + 1]), 1)
+                pygame.draw.line(screen, colors[idx], to_pygame(body[i]), to_pygame(body[i + 1]), 1)
             pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
             """This is for drawing the snake and also the snake's head is colored red"""
 
