@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 class NeuralNetwork:
 
@@ -84,24 +85,25 @@ class NeuralNetwork:
         return sess.run(self.model["Q_value"], feed_dict={ self.model["state"] : state, self.model["action"] : action })
 
     def max_permissible_Q(self, sess, state, permissible_actions):
-        Q_values = sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state })[0]
+        Q_values = sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state })
         permissible_actions = map(int, permissible_actions)
         permissible_Q = Q_values[permissible_actions]
-        best_action = np.argmax(permissible_Q)
-        return (best_action, permissible_Q[best_action])
+        best_Q_index = np.argmax(permissible_Q)
+        best_action = permissible_actions[best_Q_index]
+        return (best_action, permissible_Q[best_Q_index])
 
     def max_Q(self, sess, state):
         return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
 
     def get_gradients(self, sess, state, action, reward, next_state_Q=0):
-        arg_dict = {self.model["state"] : input_data,
+        arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
                             self.model["best_Q"] : next_state_Q}
         return sess.run(self.model["gradient"], feed_dict=arg_dict)
 
     def update_gradient(self, sess, state, action, reward, next_state_Q=0):
-        arg_dict = {self.model["state"] : input_data,
+        arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
                             self.model["best_Q"] : next_state_Q}
@@ -111,7 +113,7 @@ class NeuralNetwork:
         return sess.run(self.model["reset_accum"])
 
     def train(self, sess, state, action, reward, next_state_Q=0):
-        arg_dict = {self.model["state"] : input_data,
+        arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
                             self.model["best_Q"] : next_state_Q}
