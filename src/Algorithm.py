@@ -1,4 +1,7 @@
 import numpy as np
+import os
+import shutil
+
 from Agent import *
 from Action import Action
 from Point import Point
@@ -52,10 +55,23 @@ def getGradientForPolicy(snake, state, action, theta):
     denr = np.sum(exps)
     return featureVector - (numr / denr)
 
-def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps):    # TODO: should the game be instantiated here?
+def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
+                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):    # TODO: should the game be instantiated here?
     length = getStateLength(multipleAgents = False)
     theta = np.zeros((numberOfSnakes, length * 2))
     w = np.zeros((numberOfSnakes, length))
+
+    if load: # resume training from old checkpoints
+        w = np.load("{}/w_{}.npy".format(load_dir, load_time_step))
+        theta = np.load("{}/theta_{}.npy".format(load_dir, load_time_step))
+
+    if os.path.isdir(checkpoint_dir):
+        # if directory exists, delete it and its contents
+        try:
+            shutil.rmtree(checkpoint_dir)
+        except OSError as e:
+            print ("Error: %s - %s." % (e.filename, e.strerror))
+    os.makedirs(checkpoint_dir)
 
     timeSteps = 0
     counter = 0
@@ -80,6 +96,10 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
             singleStepRewards, episodeRunning = g.move(actionList)
             timeSteps += 1
 
+            if timeSteps % checkpointFrequency:
+                np.save("{}/theta_{}.npy".format(checkpoint_dir, timeSteps), theta)
+                np.save("{}/w_{}.npy".format(checkpoint_dir, timeSteps), w)
+
             for i, snake in enumerate(g.snakes):
                 if not snake.alive:
                     continue
@@ -97,12 +117,14 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                 break
 
         g.endGame()
-        np.save("theta.npy", theta)
-        np.save("w.npy", w)
 
-def inference(gridSize, relative, multipleAgents, k):
-    w = np.load("w.npy")
-    theta = np.load("theta.npy")
+    np.save("{}/theta_{}.npy".format(checkpoint_dir, timeSteps), theta)
+    np.save("{}/w_{}.npy".format(checkpoint_dir, timeSteps), w)
+
+
+def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500):
+    w = np.load("{}/w_{}.npy".format(load_dir, load_time_step))
+    theta = np.load("{}/theta_{}.npy".format(load_dir, load_time_step))
     g = Game(numberOfSnakes, gridSize, globalEpisodeLength)
     episodeRunning = True
     while episodeRunning:

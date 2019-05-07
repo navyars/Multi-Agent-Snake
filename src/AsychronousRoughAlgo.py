@@ -5,6 +5,8 @@ import Game
 from Constants import *
 import numpy as np
 import random
+import os
+import shutil
 
 from threading import Lock, Thread
 from queue import Queue
@@ -25,7 +27,10 @@ def epsilon_greedy_action(snake, sess, nn, input_data, epsilon):
 def best_q(snake, sess, nn, input_data):
     return nn.max_permissible_Q(sess, input_data, snake.permissible_actions())[1]
 
-def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNetwork, policySess, targetNetwork, targetSess, lock, queue):
+def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
+                                checkpointFrequency, checkpoint_dir,
+                                policyNetwork, policySess, targetNetwork, targetSess,
+                                lock, queue):
     time_steps = 0
     epsilon = []
     for idx in range(numberOfSnakes):
@@ -67,6 +72,10 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
             queue.put(T)
             lock.release()
 
+            if T % checkpointFrequency:
+                for idx in range(numberOfSnakes):
+                    policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
+                    targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
 
             for idx in range(numberOfSnakes):
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
@@ -102,13 +111,24 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, policyNe
                         checkpoint_path = "transfer_{}.ckpt".format(idx)
                         policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
                         targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
+
+            T = queue.get()
+            queue.put(T)
+            if T >= max_time_steps:
+                break
+
         print("Episode done on thread")
         T = queue.get()
         queue.put(T)
         if T >= max_time_steps:
             break
 
-def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120):
+    for idx in range(numberOfSnakes):
+        policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
+        targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
+
+def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120,
+                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
     policyNetwork = []
     targetNetwork = []
     policySess = []
@@ -125,11 +145,26 @@ def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, gl
         checkpoint_path = "transfer_{}.ckpt".format(idx)
         policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
         targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
+
+    if load: # resume training from old checkpoints
+        for idx in range(numberOfSnakes):
+            policyNetwork[idx].restore_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(load_dir, load_time_step, idx))
+            targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx))
+
+    if os.path.isdir(checkpoint_dir):
+        # if directory exists, delete it and its contents
+        try:
+            shutil.rmtree(checkpoint_dir)
+        except OSError as e:
+            print ("Error: %s - %s." % (e.filename, e.strerror))
+    os.makedirs(checkpoint_dir)
+
     T = 0
     q = Queue()
     q.put(T)
     lock = Lock()
     threads = [Thread(target=async_Q, args=(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
+                                                                        checkpointFrequency, checkpoint_dir,
                                                                         policyNetwork, policySess, targetNetwork, targetSess,
                                                                         lock, q)) for _ in range(4)]
     #map(lambda t: t.start(), threads)

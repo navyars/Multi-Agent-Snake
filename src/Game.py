@@ -56,7 +56,9 @@ class Game:
                     single_step_rewards[i] = -10
 
         for i in range(len(self.snakes)):
-            for j in range(i+1, len(self.snakes)):
+            for j in range(len(self.snakes)):
+                if i == j:
+                    continue
                 if not (self.snakes[i].alive and self.snakes[j].alive):
                     continue
                 if self.snakes[i].didHitSnake(self.snakes[j]):
