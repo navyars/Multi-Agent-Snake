@@ -33,25 +33,24 @@ from Snake import Snake
 from Point import Point
 from Action import Action
 from Constants import *
-from Food import *
 
 def calculateDistance(p1, p2):
     return sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
 
-def findKNearestPoints(head, k):
+def findKNearestPoints(head, food, k):
     dist = []
     nearestPoints = []
 
-    for food in foodList:
-        dist.append(calculateDistance(food, head))
+    for f in food.foodList:
+        dist.append(calculateDistance(f, head))
 
-    if len(foodList) < k:
-        k = len(foodList)
+    if len(food.foodList) < k:
+        k = len(food.foodList)
 
     argmin = np.argpartition(dist, k)
 
     for i in range(k):
-        nearestPoints.append(foodList[argmin[i]])
+        nearestPoints.append(food.foodList[argmin[i]])
 
     return nearestPoints
 
@@ -112,23 +111,23 @@ def findOtherSnakeNearestPoint(snake1, snake2): # snake2's nearest body point to
     minDistPoint = calculateMinDistPoint(snake1, points)
     return minDistPoint
 
-def getAbsoluteStateForSingleAgent(snake, k = 3):
+def getAbsoluteStateForSingleAgent(snake, food, k = 3):
     state = []
     state.append(snake.head)    # head
 
-    if(len(foodList)):          # k nearest points
-        state.extend(findKNearestPoints(snake.head, k))
+    if(len(food.foodList)):          # k nearest points
+        state.extend(findKNearestPoints(snake.head, food, k))
 
     state.append(findSnakeDirection(snake))   # direction
 
     return state
 
-def getRelativeStateForSingleAgent(snake, gridSize, k = 3):
+def getRelativeStateForSingleAgent(snake, gridSize, food, k = 3):
     state = []
 
-    if(len(foodList)):          # k nearest points
+    if(len(food.foodList)):          # k nearest points
         relativeFoodPoints = []
-        absoluteFoodPoints = findKNearestPoints(snake.head, k)
+        absoluteFoodPoints = findKNearestPoints(snake.head, food, k)
         for point in absoluteFoodPoints:
             relativeFoodPoints.append(relativePoints(snake.head, point))
         state.extend(relativeFoodPoints)
@@ -139,12 +138,12 @@ def getRelativeStateForSingleAgent(snake, gridSize, k = 3):
 
     return state
 
-def getAbsoluteStateForMultipleAgents(snake, agentList, k = 3):
+def getAbsoluteStateForMultipleAgents(snake, agentList, food, k = 3):
     state = []
     state.append(snake.head)    # head
 
-    if(len(foodList)):          # k nearest points
-        state.extend(findKNearestPoints(snake.head, k))
+    if(len(food.foodList)):          # k nearest points
+        state.extend(findKNearestPoints(snake.head, food, k))
 
     state.append(findSnakeDirection(snake))   # direction
 
@@ -159,12 +158,12 @@ def getAbsoluteStateForMultipleAgents(snake, agentList, k = 3):
 
     return state
 
-def getRelativeStateForMultipleAgents(snake, agentList, gridSize, k = 3):
+def getRelativeStateForMultipleAgents(snake, agentList, gridSize, food, k = 3):
     state = []
 
-    if(len(foodList)):          # k nearest points
+    if(len(food.foodList)):          # k nearest points
         relativeFoodPoints = []
-        absoluteFoodPoints = findKNearestPoints(snake.head, k)
+        absoluteFoodPoints = findKNearestPoints(snake.head, food, k)
         for point in absoluteFoodPoints:
             relativeFoodPoints.append(relativePoints(snake.head, point))
         state.extend(relativeFoodPoints)
@@ -190,18 +189,19 @@ def getStateLength(multipleAgents):
     elif multipleAgents == True:
         return 16
 
-def getState(snake, agentList, gridSize, relative, multipleAgents, k, normalize=False):
+      
+def getState(snake, agentList, gridSize, relative, multipleAgents, food, k, normalize=False):
     state = []
     if snake.alive == False:
         return [-1] * getStateLength(multipleAgents)
     if relative == False and multipleAgents == False:
-        state.extend(getAbsoluteStateForSingleAgent(snake, k))
+        state.extend(getAbsoluteStateForSingleAgent(snake, food, k))
     elif relative == False and multipleAgents == True:
-        state.extend(getAbsoluteStateForMultipleAgents(snake, agentList, k))
+        state.extend(getAbsoluteStateForMultipleAgents(snake, agentList, food, k))
     elif relative == True and multipleAgents == False:
-        state.extend(getRelativeStateForSingleAgent(snake, gridSize, k))
+        state.extend(getRelativeStateForSingleAgent(snake, gridSize, food, k))
     elif relative == True and multipleAgents == True:
-        state.extend(getRelativeStateForMultipleAgents(snake, agentList, gridSize, k))
+        state.extend(getRelativeStateForMultipleAgents(snake, agentList, gridSize, food, k))
 
     flatState = []
     for entry in state:

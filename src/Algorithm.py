@@ -89,7 +89,7 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                     stateList.append([-1] * getStateLength(multipleAgents))
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k))
+                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
                 action = getAction(snake, stateList[i], theta[i])
                 actionList.append(action)
 
@@ -106,7 +106,7 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 state = stateList[i]
                 action = actionList[i]
-                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k)
+                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k)
                 reward = singleStepRewards[i]
                 delta = reward + gamma * getValueFunction(nextState, w[i]) - getValueFunction(state, w[i])
                 w[i] = np.add(w[i], (alphaW * delta) * np.asarray(state))
@@ -136,7 +136,7 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
                 stateList.append([-1] * getStateLength(multipleAgents))
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, k))
+            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
             action = getAction(snake, stateList[i], theta[i])
             actionList.append(action)
 
