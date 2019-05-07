@@ -2,7 +2,6 @@ from numpy.random import randint
 
 from Point import Point
 from Action import Action
-from Food import *
 from Constants import *
 
 class Snake:
@@ -52,19 +51,15 @@ class Snake:
         body.append(self.end)
         return body
 
-    def didEatFood(self):
-        if(self.head in foodList):
-            self.score = self.score + 1
-            self.growSnake()
-            eatFood(self.head, Snake.snakeList)
-            return True
-        return False
+    def didEatFood(self, food):
+        return (self.head in food.foodList)
+
+    def incrementScore(self, reward):
+        self.score += reward
+        return
 
     def didHitWall(self):
-        if(self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize):
-            return True
-        else:
-            return False
+        return (self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize)
 
     def _update_point(self, p, direction):
         if direction == Action.TOP:
@@ -109,11 +104,6 @@ class Snake:
             if (self.end.x == self.joints[-1].x) and (self.end.y == self.joints[-1].y): # pop joint if end has reached it
                 self.joints = self.joints[:-1]
 
-        # check if the snake has collided with wall or other snakes. If true, undo movement and kill it
-        if self.didHitWall():
-            self.backtrack()
-            self.killSnake()
-
         return
 
     def didHitSnake(self, opponent_snake):
@@ -137,6 +127,8 @@ class Snake:
                     if p.x in range(lim1, lim2 + 1):
                         return True
 
+        return False
+
     def findDirection(self, p1, p2):  # Direction of P1 with reference to P2
         if p1.x - p2.x == 0 and p1.y - p2.y < 0:
             return Action.DOWN
@@ -148,7 +140,6 @@ class Snake:
             return Action.LEFT
 
     def growSnake(self): # Grows the snake in the direction of the tail. Should be called before moveInDirection
-
         if self.joints == []:
             direction = self.findDirection(self.end, self.head)
         # Finding direction from the last joint/head to tail as it is in this direction the increment should happen
@@ -167,12 +158,12 @@ class Snake:
                 actions.append(act)
         return actions
 
-    def killSnake(self):
+    def killSnake(self, food):
         self.alive = False
 
         body = self.getBodyList()
         points = Point.returnBodyPoints(body)
-        addFoodToList(points)
+        food.addFoodToList(points)
 
         Snake.snakeList.remove(self)
         del self.head

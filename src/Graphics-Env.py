@@ -87,7 +87,7 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
         #draw the walls
         pygame.draw.lines(screen, black, True, [(0,0), (0,gridSize), (gridSize, gridSize), (gridSize, 0)])
         # The below loop draws all the food particles as points.
-        for p in Food.foodList:
+        for p in g.food.foodList:
             pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
 
         # This is for drawing the snake and also the snake's head is colored red
@@ -112,6 +112,6 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
         clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.
     pygame.quit()
 
-
+    
 if __name__ == '__main__':
     runGame()

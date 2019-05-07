@@ -3,32 +3,36 @@ from numpy.random import randint
 from Point import Point
 from Constants import *
 
-foodList = []
+class Food:
 
-def createFood(n, snakes=[]):
-    occupiedPoints = []
-    for snake in snakes:
-        body = snake.getBodyList()
-        bodyPoints = Point.returnBodyPoints(body)
-        occupiedPoints.extend(bodyPoints)
+    def __init__(self, snakes=[]):
+        self.foodList = []
+        self.createFood(maximumFood, snakes)
 
-    for i in range(n):
-        while True:
-            x = randint(1, gridSize-1)
-            y = randint(1, gridSize-1)
-            p = Point(x,y)
-            if p not in occupiedPoints and p not in foodList:
-                foodList.append(p)
-                break
+    def createFood(self, n, snakes=[]):
+        occupiedPoints = []
+        for snake in snakes:
+            body = snake.getBodyList()
+            bodyPoints = Point.returnBodyPoints(body)
+            occupiedPoints.extend(bodyPoints)
 
-def addFoodToList(pointList):
-    for p in pointList:
-        foodList.append(p)
+        for i in range(n):
+            while True:
+                x = randint(1, gridSize-1)
+                y = randint(1, gridSize-1)
+                p = Point(x,y)
+                if p not in occupiedPoints and p not in self.foodList:
+                    self.foodList.append(p)
+                    break
 
-def eatFood(food, snakes=[]):
-    for i, f in enumerate(foodList):
-        if f == food:
-            del foodList[i]
+    def addFoodToList(self, pointList):
+        for p in pointList:
+            self.foodList.append(p)
 
-    if(len(foodList) < maximumFood):
-        createFood(maximumFood - len(foodList), snakes)
+    def eatFood(self, food, snakes=[]):
+        for i, f in enumerate(self.foodList):
+            if f == food:
+                del self.foodList[i]
+
+        if(len(self.foodList) < maximumFood):
+            self.createFood(maximumFood - len(self.foodList), snakes)
