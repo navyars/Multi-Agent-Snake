@@ -57,8 +57,8 @@ def getGradientForPolicy(snake, state, action, theta):
     return featureVector - (numr / denr)
 
 def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
-                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):    # TODO: should the game be instantiated here?
-    length = getStateLength(multipleAgents = False)
+                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
+    length = getStateLength(multipleAgents)
     theta = np.zeros((numberOfSnakes, length * 2))
     w = np.zeros((numberOfSnakes, length))
 
