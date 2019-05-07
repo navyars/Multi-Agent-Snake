@@ -29,27 +29,31 @@ def manual_action(g,event):
     This initialization may be a bit computation intensive, but added this line here for representation of two or more snakes
     Else can simply initialize to 0
     """
-    if numberOfSnakes>1:
-        actionsList = [random.choice(g.snakes[x].permissible_actions()) for x in range(numberOfSnakes)]
-    else:
-        actionsList = [0]
-    keys = pygame.key.get_pressed()
-    if g.snakes[0].joints == []:
-        defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].end)
-    else:
-        defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].joints[0])
+    actionsList = [0]*numberOfSnakes
+    for i, snake in enumerate(g.snakes):
+        if not snake.alive:
+            actionsList[i] = None
+        else:
+            actionsList[i] = random.choice(snake.permissible_actions())
 
-    actionsList[0] = defaultaction
-    user_permissible_actions = g.snakes[0].permissible_actions()
-    if event.type == pygame.KEYDOWN:
-        if keys[pygame.K_RIGHT] and Action.RIGHT in user_permissible_actions:
-            actionsList[0] = Action.RIGHT
-        elif keys[pygame.K_LEFT] and Action.LEFT in user_permissible_actions:
-            actionsList[0] = Action.LEFT
-        elif keys[pygame.K_UP] and Action.TOP in user_permissible_actions:
-            actionsList[0] = Action.TOP
-        elif keys[pygame.K_DOWN] and Action.DOWN in user_permissible_actions:
-            actionsList[0] = Action.DOWN
+    if g.snakes[0].alive: # user's snake
+        keys = pygame.key.get_pressed()
+        if g.snakes[0].joints == []:
+            defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].end)
+        else:
+            defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].joints[0])
+
+        actionsList[0] = defaultaction
+        user_permissible_actions = g.snakes[0].permissible_actions()
+        if event.type == pygame.KEYDOWN:
+            if keys[pygame.K_RIGHT] and Action.RIGHT in user_permissible_actions:
+                actionsList[0] = Action.RIGHT
+            elif keys[pygame.K_LEFT] and Action.LEFT in user_permissible_actions:
+                actionsList[0] = Action.LEFT
+            elif keys[pygame.K_UP] and Action.TOP in user_permissible_actions:
+                actionsList[0] = Action.TOP
+            elif keys[pygame.K_DOWN] and Action.DOWN in user_permissible_actions:
+                actionsList[0] = Action.DOWN
 
     return actionsList
 
@@ -69,12 +73,13 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
     if play: # user interacts with the agents
         colors[0] = black # player's snake is always black
     crashed = False
+    episodeRunning = True
     win = pygame.display.set_mode((scalingFactor * gridSize, scalingFactor * gridSize))  # Game Window
     screen = pygame.Surface((gridSize+1, gridSize+1))  # Grid Screen
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
 
-    while not crashed:
+    while not crashed and episodeRunning:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 crashed = True
@@ -87,10 +92,11 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
 
         # This is for drawing the snake and also the snake's head is colored red
         for idx in range(numberOfSnakes):
-            body = g.snakes[idx].getBodyList()
-            for i in range(len(body) - 1):
-                pygame.draw.line(screen, colors[idx], to_pygame(body[i]), to_pygame(body[i + 1]), 1)
-            pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
+            if g.snakes[idx].alive:
+                body = g.snakes[idx].getBodyList()
+                for i in range(len(body) - 1):
+                    pygame.draw.line(screen, colors[idx], to_pygame(body[i]), to_pygame(body[i + 1]), 1)
+                pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
 
         actionsList = manual_action(g, event)
         """
@@ -98,7 +104,7 @@ def runGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
         Can also add an if condition here to have one player and one agent
         and then append the two lists obtained, to pass it to move method
         """
-        g.move(actionsList)
+        _, episodeRunning = g.move(actionsList)
         win.blit(pygame.transform.scale(screen, win.get_rect().size), (0, 0)) # Transforms the screen window into the win window
         for idx in range(numberOfSnakes):
             draw_text(win, "Snake" + str(idx) + "  " + str(g.snakes[idx].score), font_size, pos_score_x * (idx + 1), pos_score_y,black) #Displaying score
