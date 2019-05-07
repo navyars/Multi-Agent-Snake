@@ -12,9 +12,9 @@ def getFeatureVector(state, action):
     featureVector = []  # s*a, s^2*a^2
     actionValue = action.value + 1
     for feature in state:
-        featureVector.append(feature * actionValue)
-        featureVector.append(feature**2 * actionValue**2)
-
+        # feature is already normalized. Multiplying with actionValue/4 ensures it stays normalized
+        featureVector.append(feature * actionValue / 4)
+        featureVector.append(feature**2 * actionValue**2 / 16)
     return np.asarray(featureVector)
 
 def getNumericalPreferences(snake, state, theta):
@@ -51,7 +51,8 @@ def getAction(snake, state, theta):
 def getGradientForPolicy(snake, state, action, theta):
     featureVector = getFeatureVector(state, action)
     exps = np.exp(getNumericalPreferences(snake, state, theta))
-    numr = np.sum([ getFeatureVector(state, action) * exps[i] for i, action in enumerate(snake.permissible_actions()) ])
+    feature_exps = np.asarray([ getFeatureVector(state, action) * exps[i] for i, action in enumerate(snake.permissible_actions()) ] )
+    numr = np.sum(feature_exps, axis=0)
     denr = np.sum(exps)
     return featureVector - (numr / denr)
 
@@ -89,14 +90,15 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                     stateList.append([-1] * getStateLength(multipleAgents))
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
+                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True))
                 action = getAction(snake, stateList[i], theta[i])
                 actionList.append(action)
 
             singleStepRewards, episodeRunning = g.move(actionList)
             timeSteps += 1
+            print "t = " + str(timeSteps)
 
-            if timeSteps % checkpointFrequency:
+            if timeSteps % checkpointFrequency == 0:
                 np.save("{}/theta_{}.npy".format(checkpoint_dir, timeSteps), theta)
                 np.save("{}/w_{}.npy".format(checkpoint_dir, timeSteps), w)
 
@@ -106,7 +108,7 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 state = stateList[i]
                 action = actionList[i]
-                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k)
+                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
                 reward = singleStepRewards[i]
                 delta = reward + gamma * getValueFunction(nextState, w[i]) - getValueFunction(state, w[i])
                 w[i] = np.add(w[i], (alphaW * delta) * np.asarray(state))
@@ -136,8 +138,15 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
                 stateList.append([-1] * getStateLength(multipleAgents))
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
+            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True))
             action = getAction(snake, stateList[i], theta[i])
             actionList.append(action)
 
         singleStepRewards, episodeRunning = g.move(actionList)
+        print g
+
+if __name__ == '__main__':
+    print "Starting training."
+    actorCritic(30, False, False, 3, 0.0011, 0.0022, 0.99, 100)
+    # actorCritic(30, False, False, 3, 0.0011, 0.0022, 0.9, 500000, checkpointFrequency=10000)
+    # inference(30, False, False, 3, load_time_step=50000)
