@@ -155,7 +155,7 @@ def displayGame(game, win, screen, colors, scalingFactor = 9):
         pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
 
     # This is for drawing the snake and also the snake's head is colored red
-    for idx in range(numberOfSnakes):
+    for idx in range(len(game.snakes)):
         if game.snakes[idx].alive:
             body = game.snakes[idx].getBodyList()
             for i in range(len(body) - 1):
@@ -163,7 +163,7 @@ def displayGame(game, win, screen, colors, scalingFactor = 9):
             pygame.draw.line(screen, red, to_pygame(body[0]), to_pygame(body[0]), 1)
 
     win.blit(pygame.transform.scale(screen, win.get_rect().size), (0, 0)) # Transforms the screen window into the win window
-    for idx in range(numberOfSnakes):
+    for idx in range(len(game.snakes)):
         draw_text(win, "Snake" + str(idx) + "  " + str(game.snakes[idx].score), font_size, pos_score_x * (idx + 1), pos_score_y,black) #Displaying score
     pygame.display.update()
     clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.

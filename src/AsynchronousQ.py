@@ -191,12 +191,15 @@ def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpo
 
     targetNetwork = []
     targetSess = []
+    if play:
+        targetNetwork.append(None)
+        targetSess.append(None)
     length = Agent.getStateLength(multipleAgents)
     for idx in range(int(play), numSnakes):
         targetNetwork.append(FunctionApproximator.NeuralNetwork(length))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
         targetNetwork[idx].init(targetSess[idx])
-        targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx))
+        targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx - int(play)))
 
     g = Game.Game(numSnakes, gridSize, globalEpisodeLength)
     episodeRunning = True
@@ -208,7 +211,7 @@ def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpo
 
         actionList = []
         if play:
-            actionList.append( GraphicsEnv.manual_action(g, event) )
+            actionList.append( GraphicsEnv.manual_action(g.snakes[0], event) )
         for i in range(int(play), numSnakes):
             snake = g.snakes[i]
             if not snake.alive:
@@ -216,7 +219,7 @@ def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpo
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
             state = Agent.getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
-            action, _ = targetNetwork[idx].max_permissible_Q(targetSess[idx], state, snake.permissible_actions())
+            action, _ = targetNetwork[i].max_permissible_Q(targetSess[i], state, snake.permissible_actions())
             actionList.append(action)
 
         singleStepRewards, episodeRunning = g.move(actionList)
