@@ -76,7 +76,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
             queue.put(T)
             lock.release()
 
-            if T % checkpointFrequency:
+            if T % checkpointFrequency == 0:
                 for idx in range(numberOfSnakes):
                     policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
                     targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
