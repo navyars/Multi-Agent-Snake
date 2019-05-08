@@ -12,9 +12,9 @@ def getFeatureVector(state, action):
     featureVector = []  # s*a, s^2*a^2
     actionValue = action.value + 1
     for feature in state:
-        featureVector.append(feature * actionValue)
-        featureVector.append(feature**2 * actionValue**2)
-
+        # feature is already normalized. Multiplying with actionValue/4 ensures it stays normalized
+        featureVector.append(feature * actionValue / 4)
+        featureVector.append(feature**2 * actionValue**2 / 16)
     return np.asarray(featureVector)
 
 def getNumericalPreferences(snake, state, theta):
@@ -51,13 +51,14 @@ def getAction(snake, state, theta):
 def getGradientForPolicy(snake, state, action, theta):
     featureVector = getFeatureVector(state, action)
     exps = np.exp(getNumericalPreferences(snake, state, theta))
-    numr = np.sum([ getFeatureVector(state, action) * exps[i] for i, action in enumerate(snake.permissible_actions()) ])
+    feature_exps = np.asarray([ getFeatureVector(state, action) * exps[i] for i, action in enumerate(snake.permissible_actions()) ] )
+    numr = np.sum(feature_exps, axis=0)
     denr = np.sum(exps)
     return featureVector - (numr / denr)
 
-def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
-                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):    # TODO: should the game be instantiated here?
-    length = getStateLength(multipleAgents = False)
+def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
+                                        checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
+    length = getStateLength(multipleAgents)
     theta = np.zeros((numberOfSnakes, length * 2))
     w = np.zeros((numberOfSnakes, length))
 
@@ -89,14 +90,15 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                     stateList.append([-1] * getStateLength(multipleAgents))
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
+                stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True))
                 action = getAction(snake, stateList[i], theta[i])
                 actionList.append(action)
 
             singleStepRewards, episodeRunning = g.move(actionList)
             timeSteps += 1
+            print "t = " + str(timeSteps)
 
-            if timeSteps % checkpointFrequency:
+            if timeSteps % checkpointFrequency == 0:
                 np.save("{}/theta_{}.npy".format(checkpoint_dir, timeSteps), theta)
                 np.save("{}/w_{}.npy".format(checkpoint_dir, timeSteps), w)
 
@@ -106,7 +108,7 @@ def actorCritic(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 state = stateList[i]
                 action = actionList[i]
-                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k)
+                nextState = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
                 reward = singleStepRewards[i]
                 delta = reward + gamma * getValueFunction(nextState, w[i]) - getValueFunction(state, w[i])
                 w[i] = np.add(w[i], (alphaW * delta) * np.asarray(state))
@@ -129,15 +131,59 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
     episodeRunning = True
     while episodeRunning:
         actionList = []
-        stateList = []
         for i, snake in enumerate(g.snakes):
             if not snake.alive:
                 actionList.append(None)
                 stateList.append([-1] * getStateLength(multipleAgents))
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k))
-            action = getAction(snake, stateList[i], theta[i])
+            state = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
+            action = getAction(snake, state, theta[i])
             actionList.append(action)
 
         singleStepRewards, episodeRunning = g.move(actionList)
+        print g
+
+def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
+    import pygame
+    import GraphicsEnv
+
+    numSnakes = numberOfSnakes
+    if play:
+        numSnakes += 1
+    colors = np.random.randint(0, 256, size=[numSnakes, 3])
+    if play: # user interacts with the agents
+        colors[0] = (0, 0, 0) # player's snake is always black
+    win = pygame.display.set_mode((scalingFactor * gridSize, scalingFactor * gridSize))  # Game Window
+    screen = pygame.Surface((gridSize+1, gridSize+1))  # Grid Screen
+    pygame.display.set_caption("Snake Game")
+    crashed = False
+
+    w = np.load("{}/w_{}.npy".format(load_dir, load_time_step))
+    theta = np.load("{}/theta_{}.npy".format(load_dir, load_time_step))
+    g = Game(numSnakes, gridSize, globalEpisodeLength)
+    episodeRunning = True
+
+    while episodeRunning and not crashed:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                crashed = True
+
+        actionList = []
+        if play:
+            actionList.append( GraphicsEnv.manual_action(g.snakes[0], event) )
+        for i in range(int(play), numSnakes):
+            snake = g.snakes[i]
+            if not snake.alive:
+                actionList.append(None)
+                continue
+            opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
+            state = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
+            action = getAction(snake, state, theta[i - int(play) ])
+            actionList.append(action)
+
+        singleStepRewards, episodeRunning = g.move(actionList)
+        GraphicsEnv.displayGame(g, win, screen, colors)
+
+if __name__=='__main__':
+    graphical_inference(30, False, False, 3, load_dir="old_checkpoints", load_time_step=10000, play=False)

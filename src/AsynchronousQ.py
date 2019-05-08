@@ -29,7 +29,7 @@ def epsilon_greedy_action(snake, sess, nn, state, epsilon):
 def best_q(snake, sess, nn, input_data):
     return nn.max_permissible_Q(sess, input_data, snake.permissible_actions())[1]
 
-def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
+def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relativeState,
                                 checkpointFrequency, checkpoint_dir,
                                 policyNetwork, policySess, targetNetwork, targetSess,
                                 lock, queue):
@@ -43,7 +43,6 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
                 break
 
     multipleAgents = numberOfSnakes > 1
-    relativeState = False
     while True:
         g = Game.Game(numberOfSnakes, gridSize, globalEpisodeLength)
         #Start a Game
@@ -76,7 +75,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
             queue.put(T)
             lock.release()
 
-            if T % checkpointFrequency:
+            if T % checkpointFrequency == 0:
                 for idx in range(numberOfSnakes):
                     policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
                     targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
@@ -125,17 +124,20 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
         policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
         targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
 
-def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120,
+
+def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120, relativeState=False,
                                         checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
     policyNetwork = []
     targetNetwork = []
     policySess = []
     targetSess = []
 
+    multipleAgents = numberOfSnakes > 1
+    length = Agent.getStateLength(multipleAgents)
     #Initializing the 2*n neural nets
     for idx in range(numberOfSnakes):
-        policyNetwork.append(FunctionApproximator.NeuralNetwork(9))
-        targetNetwork.append(FunctionApproximator.NeuralNetwork(9))
+        policyNetwork.append(FunctionApproximator.NeuralNetwork(length))
+        targetNetwork.append(FunctionApproximator.NeuralNetwork(length))
         policySess.append(tf.Session(graph=policyNetwork[idx].graph))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
         policyNetwork[idx].init(policySess[idx])
@@ -161,7 +163,7 @@ def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, gl
     q = Queue()
     q.put(T)
     lock = Lock()
-    threads = [Thread(target=async_Q, args=(max_time_steps, reward, penalty, asyncUpdate, globalUpdate,
+    threads = [Thread(target=async_Q, args=(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relativeState,
                                                                         checkpointFrequency, checkpoint_dir,
                                                                         policyNetwork, policySess, targetNetwork, targetSess,
                                                                         lock, q)) for _ in range(4)]
@@ -172,5 +174,58 @@ def mainAlgorithm(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, gl
     print(threads)
     print("main complete")
 
+def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
+    import pygame
+    import GraphicsEnv
+
+    numSnakes = numberOfSnakes
+    if play:
+        numSnakes += 1
+    colors = np.random.randint(0, 256, size=[numSnakes, 3])
+    if play: # user interacts with the agents
+        colors[0] = (0, 0, 0) # player's snake is always black
+    win = pygame.display.set_mode((scalingFactor * gridSize, scalingFactor * gridSize))  # Game Window
+    screen = pygame.Surface((gridSize+1, gridSize+1))  # Grid Screen
+    pygame.display.set_caption("Snake Game")
+    crashed = False
+
+    targetNetwork = []
+    targetSess = []
+    if play:
+        targetNetwork.append(None)
+        targetSess.append(None)
+    length = Agent.getStateLength(multipleAgents)
+    for idx in range(int(play), numSnakes):
+        targetNetwork.append(FunctionApproximator.NeuralNetwork(length))
+        targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
+        targetNetwork[idx].init(targetSess[idx])
+        targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx - int(play)))
+
+    g = Game.Game(numSnakes, gridSize, globalEpisodeLength)
+    episodeRunning = True
+
+    while episodeRunning and not crashed:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                crashed = True
+
+        actionList = []
+        if play:
+            actionList.append( GraphicsEnv.manual_action(g.snakes[0], event) )
+        for i in range(int(play), numSnakes):
+            snake = g.snakes[i]
+            if not snake.alive:
+                actionList.append(None)
+                continue
+            opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
+            state = Agent.getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
+            action, _ = targetNetwork[i].max_permissible_Q(targetSess[i], state, snake.permissible_actions())
+            actionList.append(action)
+
+        singleStepRewards, episodeRunning = g.move(actionList)
+        GraphicsEnv.displayGame(g, win, screen, colors)
+
+
 if __name__ == '__main__':
-    mainAlgorithm(max_time_steps=500, reward=1, penalty=-10, asyncUpdate=20, globalUpdate=60)
+    # train(max_time_steps=500, reward=1, penalty=-10, asyncUpdate=20, globalUpdate=60, relativeState=False)
+    graphical_inference(gridSize, False, False, 3, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9)

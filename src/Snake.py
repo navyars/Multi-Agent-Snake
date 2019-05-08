@@ -35,9 +35,11 @@ class Snake:
         if self.alive:
             body = self.getBodyList()
             body_str = str(map(str,body))
-            return "Snake " + str(self.id) + ": " + body_str
+            print_message = "Snake {}\n\tPosition = {}\n\tScore = {}\n".format(self.id, body_str, self.score)
+            return print_message
         else:
-            return "Snake " + str(self.id) + ": Dead"
+            print_message = "Snake {}\n\tDead. Score = {}\n".format(self.id, self.score)
+            return print_message
 
     def lists_overlap(self, list1, list2):
         for point in list1:
