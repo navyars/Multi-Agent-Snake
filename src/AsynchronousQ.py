@@ -135,11 +135,12 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
             break
 
     for idx in range(numberOfSnakes):
-        policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T, idx))
-        targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T, idx))
+        policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T+1, idx))
+        targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T+1, idx))
 
 
 def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120, relativeState=False,
+                                        size_of_hidden_layer=20, gamma=0.9, learning_rate=0.001,
                                         checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
     policyNetwork = []
     targetNetwork = []
@@ -150,8 +151,8 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     length = Agent.getStateLength(multipleAgents)
     #Initializing the 2*n neural nets
     for idx in range(numberOfSnakes):
-        policyNetwork.append(FunctionApproximator.NeuralNetwork(length))
-        targetNetwork.append(FunctionApproximator.NeuralNetwork(length))
+        policyNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer, gamma, learning_rate))
+        targetNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer, gamma, learning_rate))
         policySess.append(tf.Session(graph=policyNetwork[idx].graph))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
         policyNetwork[idx].init(policySess[idx])
@@ -188,7 +189,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     print(threads)
     print("main complete")
 
-def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
+def graphical_inference(gridSize, relative, multipleAgents, k, size_of_hidden_layer=20, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
     import pygame
     import GraphicsEnv
 
@@ -210,7 +211,7 @@ def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpo
         targetSess.append(None)
     length = Agent.getStateLength(multipleAgents)
     for idx in range(int(play), numSnakes):
-        targetNetwork.append(FunctionApproximator.NeuralNetwork(length))
+        targetNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer=size_of_hidden_layer))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
         targetNetwork[idx].init(targetSess[idx])
         targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx - int(play)))

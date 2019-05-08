@@ -50,23 +50,26 @@ def main():
 
     parser.add_argument("--lr", type=float, default=0.0001,
                         help="Learning rate for training neural network approximator. Requires: --algorithm=asyncQ")
+    parser.add_argument('--hidden_units', type=int, default=20,
+                        help="Size of the hidden layer of neural network. Requires: --algorithm=asyncQ")
 
     args = parser.parse_args()
 
     if args.mode=='train':
         load = (args.trained_ckpt_index != -1)
         if args.algorithm == 'asyncQ':
-            AsynchronousQ.train(max_time_steps=args.train_time_steps, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120, relativeState=args.use_relative_state,
+            AsynchronousQ.train(max_time_steps=args.train_time_steps, reward=1, penalty=-10, asyncUpdate=128, globalUpdate=512, relativeState=args.use_relative_state,
+                                                    size_of_hidden_layer=args.hidden_units, gamma=args.y, learning_rate=args.lr,
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         else:
-            ActorCritic.train(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.alphaTheta, args.alphaW, args.gamma, args.train_time_steps,
+            ActorCritic.train(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.alphaTheta, args.alphaW, args.y, args.train_time_steps,
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         print("Training complete.")
     else:
         if args.algorithm == 'asyncQ':
-            AsynchronousQ.graphical_inference(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k,
+            AsynchronousQ.graphical_inference(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.hidden_units,
                                                                         load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
         else:
             ActorCritic.graphical_inference(Constants.gridSize,  args.use_relative_state, args.multi_agent, args.k,
