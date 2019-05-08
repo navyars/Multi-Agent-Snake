@@ -10,10 +10,11 @@ import shutil
 
 from Action import Action
 from threading import Lock, Thread
-from Queue import Queue
+from queue import Queue
 from multiprocessing import cpu_count
 
 def epsilon_greedy_action(snake, sess, nn, state, epsilon):
+        state = [state]
         possible_actions = snake.permissible_actions()
         best_action, _ = nn.max_permissible_Q(sess, state, possible_actions)
         best_action = Action(best_action)
@@ -26,8 +27,9 @@ def epsilon_greedy_action(snake, sess, nn, state, epsilon):
         #choose action according to epsilon-greedy
         #return the action to be chosen
 
-def best_q(snake, sess, nn, input_data):
-    return nn.max_permissible_Q(sess, input_data, snake.permissible_actions())[1]
+def best_q(snake, sess, nn, state):
+    # state = [state]
+    return nn.max_permissible_Q(sess, state, snake.permissible_actions())[1]
 
 def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relativeState,
                                 checkpointFrequency, checkpoint_dir,
@@ -84,21 +86,20 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
                     pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                     final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, g.food, 3, normalize=True)
-
                     if not episodeRunning or not g.snakes[idx].alive: # Training is done on the snake only on terminal state
                         lock.acquire()
-                        policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward[idx])
-                        policyNetwork[idx].train(policySess[idx], initial_state[idx], actions_taken[idx], single_step_reward[idx])
+                        policyNetwork[idx].update_gradient(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]], [[ single_step_reward[idx] ]])
+                        policyNetwork[idx].train(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]], [[ single_step_reward[idx] ]])
                         policyNetwork[idx].reset_accumulator(policySess[idx])
                         lock.release()
                     else: #Else only an update is done
-                        next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], final_state)
+                        next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], [final_state])
                         lock.acquire()
-                        policyNetwork[idx].update_gradient(policySess[idx], initial_state[idx], actions_taken[idx],
-                                                           single_step_reward[idx], next_state_best_Q)
+                        policyNetwork[idx].update_gradient(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]],
+                                                           [[ single_step_reward[idx] ]], [[next_state_best_Q]])
                         if time_steps % asyncUpdate == 0:
-                            policyNetwork[idx].train(policySess[idx], initial_state[idx], actions_taken[idx],
-                                                     single_step_reward[idx], next_state_best_Q)
+                            policyNetwork[idx].train(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]],
+                                                     [[ single_step_reward[idx] ]], [[next_state_best_Q]])
                             policyNetwork[idx].reset_accumulator(policySess[idx])
                         lock.release()
 

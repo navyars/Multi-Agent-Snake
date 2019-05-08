@@ -7,13 +7,13 @@ class NeuralNetwork:
         self.graph = tf.Graph()
         with self.graph.as_default():
             layers = self.create_model(data_length, size_of_hidden_layer) # defines the neural network architecture
-            action = tf.placeholder(tf.int32, shape=(), name="action_selected")
-            Q_value = tf.gather(layers[-1], action, name="Q") # fetch the Q(s,a) value
+            action = tf.placeholder(tf.int32, shape=[None,1], name="action_selected")
+            Q_value = tf.batch_gather(layers[-1], action, name="Q") # fetch the Q(s,a) value
 
             optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
-            reward = tf.placeholder(tf.float32, shape=(), name="reward")
-            best_Q = tf.placeholder(tf.float32, shape=(), name="best_next_state_Q")
+            reward = tf.placeholder(tf.float32, shape=[None, 1], name="reward")
+            best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
             t1 = gamma*best_Q
             t2 = reward + t1
             difference = t2 - Q_value
@@ -55,18 +55,16 @@ class NeuralNetwork:
         return
 
     def create_model(self, data_length, size_of_hidden_layer):
-        layers = [0, 0, 0, 0, 0, 0]
+        layers = [0, 0, 0, 0]
         xavier_init = tf.contrib.layers.xavier_initializer()
-        layers[0] = tf.placeholder(tf.float32, shape=(data_length,), name="data")
-        layers[1] = tf.expand_dims(layers[0], 0)
-        layers[2] = tf.layers.dense(layers[1], size_of_hidden_layer,
+        layers[0] = tf.placeholder(tf.float32, shape=[None,data_length], name="data")
+        layers[1] = tf.layers.dense(layers[0], size_of_hidden_layer,
                                                             kernel_initializer=xavier_init, use_bias=True,
                                                             activation=tf.nn.relu, name="hidden")
-        layers[3] = tf.layers.dense(layers[2], 4, # one for each action
+        layers[2] = tf.layers.dense(layers[1], 4, # one for each action
                                                             kernel_initializer=xavier_init, use_bias=True,
                                                             activation=tf.nn.relu, name="out")
-        layers[4] = tf.nn.softmax(layers[3], name="softmax")
-        layers[5] = tf.squeeze(layers[4])
+        layers[3] = tf.nn.softmax(layers[2], name="softmax")
         return layers
 
     def save_model(self, sess, path):
@@ -84,25 +82,22 @@ class NeuralNetwork:
     def Q(self, sess, state, action):
         return sess.run(self.model["Q_value"], feed_dict={ self.model["state"] : state, self.model["action"] : action })
 
-    def max_permissible_Q(self, sess, state, permissible_actions):
-        Q_values = sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state })
-        permissible_actions = map(int, permissible_actions)
+    def max_permissible_Q(self, sess, state, permissible_actions): # implemented only for batch_size=1
+        Q_values = sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state })[0]
+        permissible_actions = list(map(int, permissible_actions))
         permissible_Q = Q_values[permissible_actions]
         best_Q_index = np.argmax(permissible_Q)
         best_action = permissible_actions[best_Q_index]
         return (best_action, permissible_Q[best_Q_index])
 
-    def max_Q(self, sess, state):
-        return np.max(sess.run(self.model["softmax"], feed_dict={ self.model["state"] : state }))
-
-    def get_gradients(self, sess, state, action, reward, next_state_Q=0):
+    def get_gradients(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
                             self.model["best_Q"] : next_state_Q}
         return sess.run(self.model["gradient"], feed_dict=arg_dict)
 
-    def update_gradient(self, sess, state, action, reward, next_state_Q=0):
+    def update_gradient(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
@@ -112,7 +107,7 @@ class NeuralNetwork:
     def reset_accumulator(self, sess):
         return sess.run(self.model["reset_accum"])
 
-    def train(self, sess, state, action, reward, next_state_Q=0):
+    def train(self, sess, state, action, reward, next_state_Q=[[0]]):
         arg_dict = {self.model["state"] : state,
                             self.model["action"] : action,
                             self.model["reward"] : reward,
