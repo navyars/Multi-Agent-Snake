@@ -20,7 +20,7 @@ class NeuralNetwork:
             loss = tf.square(difference, name="loss")
 
             trainable_vars = tf.trainable_variables()
-            saver = tf.train.Saver(trainable_vars) # us ed for saving and restoring the weights of the hidden layers
+            saver = tf.train.Saver(trainable_vars, max_to_keep=None) # us ed for saving and restoring the weights of the hidden layers
             train_op = optimizer.minimize(loss)
 
             global_init = tf.global_variables_initializer()

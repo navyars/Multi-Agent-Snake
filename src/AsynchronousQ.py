@@ -9,7 +9,7 @@ import os
 import shutil
 
 from Action import Action
-from threading import Lock, Thread
+from threading import Lock, Thread, get_ident
 from queue import Queue
 from multiprocessing import cpu_count
 
@@ -119,21 +119,23 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
             queue.put(T)
             if T % globalUpdate == 0:
                 for idx in range(numberOfSnakes):
-                    checkpoint_path = "transfer_{}.ckpt".format(idx)
+                    checkpoint_path = "{}/transfer_{}.ckpt".format(checkpoint_dir, idx)
+                    lock.acquire()
                     policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
                     targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
+                    lock.release()
 
             T = queue.get()
             queue.put(T)
             if T >= max_time_steps:
                 break
 
-        print("Episode done on thread")
+        print("Episode done on thread {}. T = {}.".format(get_ident(), T))
         T = queue.get()
         queue.put(T)
         if T >= max_time_steps:
             break
-
+    print("Thread {} complete.".format(get_ident()))
     for idx in range(numberOfSnakes):
         policyNetwork[idx].save_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(checkpoint_dir, T+1, idx))
         targetNetwork[idx].save_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(checkpoint_dir, T+1, idx))
@@ -147,6 +149,14 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     policySess = []
     targetSess = []
 
+    if os.path.isdir(checkpoint_dir):
+        # if directory exists, delete it and its contents
+        try:
+            shutil.rmtree(checkpoint_dir)
+        except OSError as e:
+            print ("Error: %s - %s." % (e.filename, e.strerror))
+    os.makedirs(checkpoint_dir)
+
     multipleAgents = numberOfSnakes > 1
     length = Agent.getStateLength(multipleAgents)
     #Initializing the 2*n neural nets
@@ -157,7 +167,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
         policyNetwork[idx].init(policySess[idx])
         targetNetwork[idx].init(targetSess[idx])
-        checkpoint_path = "transfer_{}.ckpt".format(idx)
+        checkpoint_path = "{}/transfer_{}.ckpt".format(checkpoint_dir, idx)
         policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
         targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
 
@@ -165,14 +175,6 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
         for idx in range(numberOfSnakes):
             policyNetwork[idx].restore_model(policySess[idx], "{}/policy_{}_{}.ckpt".format(load_dir, load_time_step, idx))
             targetNetwork[idx].restore_model(targetSess[idx], "{}/target_{}_{}.ckpt".format(load_dir, load_time_step, idx))
-
-    if os.path.isdir(checkpoint_dir):
-        # if directory exists, delete it and its contents
-        try:
-            shutil.rmtree(checkpoint_dir)
-        except OSError as e:
-            print ("Error: %s - %s." % (e.filename, e.strerror))
-    os.makedirs(checkpoint_dir)
 
     T = 0
     q = Queue()
