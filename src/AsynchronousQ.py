@@ -53,12 +53,21 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
         pastStateAlive = [True for i in range(numberOfSnakes)]
         actions_taken = [0 for j in range(numberOfSnakes)]
         initial_state = [0]*numberOfSnakes
+
+        state           = [ [] for _ in range(numberOfSnakes) ]
+        action          = [ [] for _ in range(numberOfSnakes) ]
+        reward          = [ [] for _ in range(numberOfSnakes) ]
+        next_state_Q    = [ [] for _ in range(numberOfSnakes) ]
+
         while episodeRunning: #Meaning in an episode
             for idx in range(numberOfSnakes):
                 pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                 if g.snakes[idx].alive:
                     initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, g.food, 3, normalize=True)
                     actions_taken[idx] = epsilon_greedy_action(g.snakes[idx], policySess[idx], policyNetwork[idx], initial_state[idx], epsilon[idx])
+
+                    state[idx].append(initial_state[idx])
+                    action[idx].append([actions_taken[idx]])
                     pastStateAlive[idx] = True
                 else:
                     actions_taken[idx] = None
@@ -84,31 +93,35 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
 
             for idx in range(numberOfSnakes):
                 if (pastStateAlive[idx]): # To check if snake was already dead or just died
-                    pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
-                    final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, g.food, 3, normalize=True)
-                    if not episodeRunning or not g.snakes[idx].alive: # Training is done on the snake only on terminal state
-                        lock.acquire()
-                        policyNetwork[idx].update_gradient(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]], [[ single_step_reward[idx] ]])
-                        policyNetwork[idx].train(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]], [[ single_step_reward[idx] ]])
-                        policyNetwork[idx].reset_accumulator(policySess[idx])
-                        lock.release()
-                    else: #Else only an update is done
-                        next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], [final_state])
-                        lock.acquire()
-                        policyNetwork[idx].update_gradient(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]],
-                                                           [[ single_step_reward[idx] ]], [[next_state_best_Q]])
-                        if time_steps % asyncUpdate == 0:
-                            policyNetwork[idx].train(policySess[idx], [initial_state[idx]], [[ actions_taken[idx] ]],
-                                                     [[ single_step_reward[idx] ]], [[next_state_best_Q]])
-                            policyNetwork[idx].reset_accumulator(policySess[idx])
-                        lock.release()
+                    reward[idx].append([single_step_reward[idx]])
 
-                    T = queue.get()
-                    queue.put(T)
-                    if T % globalUpdate == 0:
-                        checkpoint_path = "transfer_{}.ckpt".format(idx)
-                        policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
-                        targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
+                    pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
+                    if not episodeRunning or not g.snakes[idx].alive: # train on terminal
+                        next_state_Q[idx].append([0])
+                        lock.acquire()
+                        policyNetwork[idx].train(policySess[idx], state[idx], action[idx], reward[idx], next_state_Q[idx])
+                        lock.release()
+                        state[idx], action[idx], reward[idx], next_state_Q[idx] = [], [], [], []
+                    else:
+                        final_state = Agent.getState(g.snakes[idx], pruned_snake_list, gridSize, relativeState, multipleAgents, g.food, 3, normalize=True)
+                        next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], [final_state])
+                        next_state_Q[idx].append([next_state_best_Q])
+
+            if time_steps % asyncUpdate == 0:
+                for idx in range(numberOfSnakes):
+                    if pastStateAlive[idx] and g.snakes[idx].alive: # train only if non-terminal, since terminal case is handled above
+                        lock.acquire()
+                        policyNetwork[idx].train(policySess[idx], state[idx], action[idx], reward[idx], next_state_Q[idx])
+                        lock.release()
+                    state[idx], action[idx], reward[idx], next_state_Q[idx] = [], [], [], []
+
+            T = queue.get()
+            queue.put(T)
+            if T % globalUpdate == 0:
+                for idx in range(numberOfSnakes):
+                    checkpoint_path = "transfer_{}.ckpt".format(idx)
+                    policyNetwork[idx].save_model(policySess[idx], checkpoint_path)
+                    targetNetwork[idx].restore_model(targetSess[idx], checkpoint_path)
 
             T = queue.get()
             queue.put(T)
@@ -220,7 +233,7 @@ def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpo
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
             state = Agent.getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
-            action, _ = targetNetwork[i].max_permissible_Q(targetSess[i], state, snake.permissible_actions())
+            action, _ = targetNetwork[i].max_permissible_Q(targetSess[i], [state], snake.permissible_actions())
             actionList.append(action)
 
         singleStepRewards, episodeRunning = g.move(actionList)
