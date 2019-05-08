@@ -52,6 +52,8 @@ def main():
                         help="Learning rate for training neural network approximator. Requires: --algorithm=asyncQ")
     parser.add_argument('--hidden_units', type=int, default=20,
                         help="Size of the hidden layer of neural network. Requires: --algorithm=asyncQ")
+    parser.add_argument('--threads', type=int, default=4,
+                        help="The number of threads to run training on. Requires: --algorithm=asyncQ")
 
     args = parser.parse_args()
 
@@ -59,7 +61,7 @@ def main():
         load = (args.trained_ckpt_index != -1)
         if args.algorithm == 'asyncQ':
             AsynchronousQ.train(max_time_steps=args.train_time_steps, reward=1, penalty=-10, asyncUpdate=128, globalUpdate=512, relativeState=args.use_relative_state,
-                                                    size_of_hidden_layer=args.hidden_units, gamma=args.y, learning_rate=args.lr,
+                                                    size_of_hidden_layer=args.hidden_units, gamma=args.y, learning_rate=args.lr, num_threads=args.threads,
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         else:

@@ -109,7 +109,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
 
             if time_steps % asyncUpdate == 0:
                 for idx in range(numberOfSnakes):
-                    if pastStateAlive[idx] and g.snakes[idx].alive: # train only if non-terminal, since terminal case is handled above
+                    if pastStateAlive[idx] and g.snakes[idx].alive and episodeRunning: # train only if non-terminal, since terminal case is handled above
                         lock.acquire()
                         policyNetwork[idx].train(policySess[idx], state[idx], action[idx], reward[idx], next_state_Q[idx])
                         lock.release()
@@ -142,7 +142,7 @@ def async_Q(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relative
 
 
 def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpdate=120, relativeState=False,
-                                        size_of_hidden_layer=20, gamma=0.9, learning_rate=0.001,
+                                        size_of_hidden_layer=20, gamma=0.9, learning_rate=0.001, num_threads=4,
                                         checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
     policyNetwork = []
     targetNetwork = []
@@ -183,7 +183,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     threads = [Thread(target=async_Q, args=(max_time_steps, reward, penalty, asyncUpdate, globalUpdate, relativeState,
                                                                         checkpointFrequency, checkpoint_dir,
                                                                         policyNetwork, policySess, targetNetwork, targetSess,
-                                                                        lock, q)) for _ in range(4)]
+                                                                        lock, q)) for _ in range(num_threads)]
     #map(lambda t: t.start(), threads)
     for t in threads:
         t.start()
