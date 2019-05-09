@@ -96,7 +96,7 @@ def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxT
 
             singleStepRewards, episodeRunning = g.move(actionList)
             timeSteps += 1
-            print "t = " + str(timeSteps)
+            print("t = " + str(timeSteps))
 
             if timeSteps % checkpointFrequency == 0:
                 np.save("{}/theta_{}.npy".format(checkpoint_dir, timeSteps), theta)
@@ -142,7 +142,7 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
             actionList.append(action)
 
         singleStepRewards, episodeRunning = g.move(actionList)
-        print g
+        print(g)
 
 def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
     import pygame
