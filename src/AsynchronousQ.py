@@ -158,7 +158,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     os.makedirs(checkpoint_dir)
 
     multipleAgents = numberOfSnakes > 1
-    length = Agent.getStateLength(multipleAgents)
+    length = Agent.getStateLength(multipleAgents, 3)
     #Initializing the 2*n neural nets
     for idx in range(numberOfSnakes):
         policyNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer, gamma, learning_rate))
@@ -211,7 +211,7 @@ def graphical_inference(gridSize, relative, multipleAgents, k, size_of_hidden_la
     if play:
         targetNetwork.append(None)
         targetSess.append(None)
-    length = Agent.getStateLength(multipleAgents)
+    length = Agent.getStateLength(multipleAgents, 3)
     for idx in range(int(play), numSnakes):
         targetNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer=size_of_hidden_layer))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))

@@ -72,7 +72,7 @@ def calculateMinDistPoint(snake, points):
     dist = np.asarray(dist)
 
     minIndices = np.where(dist == dist.min())
-    if minIndices[0] == (1,):
+    if minIndices[0].shape[0] == 1:
         return points[minIndices[0][0]]
     else:
         direction = findSnakeDirection(snake)
@@ -183,17 +183,17 @@ def getRelativeStateForMultipleAgents(snake, agentList, gridSize, food, k = 3):
 
     return state
 
-def getStateLength(multipleAgents):
+def getStateLength(multipleAgents, k):
     if multipleAgents == False:
         return 9
     elif multipleAgents == True:
-        return 16
+        return 3 + (k*2) + (numberOfSnakes-1)*7
 
-      
+
 def getState(snake, agentList, gridSize, relative, multipleAgents, food, k, normalize=False):
     state = []
     if snake.alive == False:
-        return [-1] * getStateLength(multipleAgents)
+        return [-1] * getStateLength(multipleAgents, k)
     if relative == False and multipleAgents == False:
         state.extend(getAbsoluteStateForSingleAgent(snake, food, k))
     elif relative == False and multipleAgents == True:

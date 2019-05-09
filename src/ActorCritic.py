@@ -58,7 +58,7 @@ def getGradientForPolicy(snake, state, action, theta):
 
 def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
                                         checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
-    length = getStateLength(multipleAgents)
+    length = getStateLength(multipleAgents, k)
     theta = np.zeros((numberOfSnakes, length * 2))
     w = np.zeros((numberOfSnakes, length))
 
@@ -87,7 +87,7 @@ def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxT
             for i, snake in enumerate(g.snakes):
                 if not snake.alive:
                     actionList.append(None)
-                    stateList.append([-1] * getStateLength(multipleAgents))
+                    stateList.append([-1] * getStateLength(multipleAgents, k))
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 stateList.append(getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True))
@@ -134,7 +134,7 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
         for i, snake in enumerate(g.snakes):
             if not snake.alive:
                 actionList.append(None)
-                stateList.append([-1] * getStateLength(multipleAgents))
+                stateList.append([-1] * getStateLength(multipleAgents, k))
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
             state = getState(snake, opponentSnakes, gridSize, relative, multipleAgents, g.food, k, normalize=True)
