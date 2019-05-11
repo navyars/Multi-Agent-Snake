@@ -1,3 +1,11 @@
+''' This file contains the Snake class which creates the snake objects. 
+It ensures that the snakes spawned do not overlap. Each snake has a head, tail, 
+joints, 'id', score, alive/dead. It also has methods for getting the body of the
+snake, method that returns a boolean indicating if the snake has eaten food, if 
+the snake hit the wall or another snake, to update the snake's object according 
+to the movement of the snake in a particular direction, return the permissible 
+actions for a snake, and other helper methods to maintain the snake object'''
+
 from numpy.random import randint
 
 from Point import Point
@@ -41,28 +49,35 @@ class Snake:
             print_message = "Snake {}\n\tDead. Score = {}\n".format(self.id, self.score)
             return print_message
 
+    ''' Helper method to check if the bodies of the snake overlap '''
     def lists_overlap(self, list1, list2):
         for point in list1:
             if point in list2:
                 return True
         return False
 
+    ''' Returns the body of the snake stitching together the head, tail and the joints '''
     def getBodyList(self):
         body = [self.head]
         body.extend(self.joints)
         body.append(self.end)
         return body
 
+    ''' Returns a boolean indicating if a food point has been eaten by a snake '''
     def didEatFood(self, food):
         return (self.head in food.foodList)
 
+    ''' Increments the score of a snake '''
     def incrementScore(self, reward):
         self.score += reward
         return
 
+    ''' Returns a boolean indicating if the snake hit a wall '''
     def didHitWall(self):
         return (self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize)
 
+    ''' Method to update the point coordinates according to the direction 
+    of movement '''
     def _update_point(self, p, direction):
         if direction == Action.TOP:
             p.y += 1
@@ -84,6 +99,8 @@ class Snake:
         self.head, self.joints, self.end = self._copy(self.prev_head, self.prev_joints, self.prev_end)
         return
 
+    ''' Moves the snake in a direction chosen by it at each time step. This updates 
+    the snake body points ''' 
     def moveInDirection(self, action):
         assert (action in self.permissible_actions()), "Action not allowed in this state."
         self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
@@ -108,6 +125,7 @@ class Snake:
 
         return
 
+    ''' Returns a boolean indicating if the snake hit another snake '''
     def didHitSnake(self, opponent_snake):
         body = opponent_snake.getBodyList()
 
@@ -131,7 +149,8 @@ class Snake:
 
         return False
 
-    def findDirection(self, p1, p2):  # Direction of P1 with reference to P2
+    ''' Returns the direction of P1 with reference to P2 '''
+    def findDirection(self, p1, p2):
         if p1.x - p2.x == 0 and p1.y - p2.y < 0:
             return Action.DOWN
         elif p1.x - p2.x == 0 and p1.y - p2.y > 0:
@@ -141,15 +160,19 @@ class Snake:
         elif p1.x - p2.x < 0 and p1.y - p2.y == 0:
             return Action.LEFT
 
-    def growSnake(self): # Grows the snake in the direction of the tail. Should be called before moveInDirection
+    ''' Grows the snake in the direction of the tail once the food is eaten. 
+    Should be called before moveInDirection '''
+    def growSnake(self):
         if self.joints == []:
             direction = self.findDirection(self.end, self.head)
-        # Finding direction from the last joint/head to tail as it is in this direction the increment should happen
+        ''' Finding direction from the last joint/head to tail as it is in this direction the increment should happen '''
         else:
             direction = self.findDirection(self.end, self.joints[-1])
         self.end = self._update_point(self.end, direction)
 
-    def permissible_actions(self):  # Returns a list of permissible actions
+    ''' Returns the permissible actions for a snake, given the direction of motion
+    of the snake '''
+    def permissible_actions(self):
         actions = []
         if self.joints == []:
             direction = self.findDirection(self.end, self.head)
@@ -160,6 +183,8 @@ class Snake:
                 actions.append(act)
         return actions
 
+    ''' Once the snake is dead, this method sets the alive bit of the snake to false, 
+    converts the body points into food points and deletes the snake's head, joints and tail '''
     def killSnake(self, food):
         self.alive = False
 
