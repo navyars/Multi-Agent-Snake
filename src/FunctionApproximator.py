@@ -1,3 +1,7 @@
+"""This code is used to initialize and create neural networks
+that is used in the Asynchronous Q-Learning algorithm.
+It also provides helper methods to accumulate gradients and update them"""
+
 import tensorflow as tf
 import numpy as np
 
