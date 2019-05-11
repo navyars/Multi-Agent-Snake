@@ -1,3 +1,6 @@
+''' This file is the entry point to the project. It takes in the user arguments, 
+processes it and then calls the appropriate functions accordingly '''
+
 import argparse
 
 import ActorCritic

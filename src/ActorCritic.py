@@ -1,3 +1,8 @@
+''' This file contains the implementation of the actor critic algorithm. It 
+contains helper methods to get policy and feature vector that are necessary 
+for the algorithm. It also contains a method to run the game on a graphical user 
+interface once the agent has been trained '''
+
 import numpy as np
 import os
 import shutil
@@ -8,6 +13,8 @@ from Point import Point
 from Game import Game
 from Constants import *
 
+''' Returns the normalised feature vector which is a combination of the state 
+points and the action'''
 def getFeatureVector(state, action):
     featureVector = []  # s*a, s^2*a^2
     actionValue = action.value + 1
@@ -17,6 +24,8 @@ def getFeatureVector(state, action):
         featureVector.append(feature**2 * actionValue**2 / 16)
     return np.asarray(featureVector)
 
+''' Returns the numerical preferences given the feature vector and the theta parameter.
+Numerical preferences is a linear function approximation in theta parameter '''
 def getNumericalPreferences(snake, state, theta):
     numericalPreferenceList = []
     for action in snake.permissible_actions():
@@ -26,6 +35,7 @@ def getNumericalPreferences(snake, state, theta):
 
     return numericalPreferenceList
 
+''' Returns the softmax policy for the given state, action and theta parameter '''
 def getPolicy(snake, state, theta, action):
     featureVector = getFeatureVector(state, action)
     numericalPreference = np.dot(theta.T, featureVector)    # h(s, a, theta)
@@ -33,6 +43,7 @@ def getPolicy(snake, state, theta, action):
 
     return (np.exp(numericalPreference) / np.sum( np.exp(numericalPreferenceList) ))    # e^h(s, a, theta)/ Sum over b(e^h(s, b, theta))
 
+''' Returns the value for a given state which acts as a critic in this algorithm '''
 def getValueFunction(state, w):
     if np.all(np.asarray(state) == -1):
         return 0
@@ -48,6 +59,7 @@ def getAction(snake, state, theta):
         actions.append(action)
     return Action(np.random.choice(actions, p=actionProbability))
 
+''' Returns the differential of the policy with respect to the policy parameter theta'''
 def getGradientForPolicy(snake, state, action, theta):
     featureVector = getFeatureVector(state, action)
     exps = np.exp(getNumericalPreferences(snake, state, theta))
@@ -56,6 +68,8 @@ def getGradientForPolicy(snake, state, action, theta):
     denr = np.sum(exps)
     return featureVector - (numr / denr)
 
+''' Actor critic algorithm is implemented in this method and the agent is set to 
+train according to the algorithm. It also saves the checkpoints while training '''
 def train(gridSize, relative, multipleAgents, k, alphaTheta, alphaW, gamma, maxTimeSteps,
                                         checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
     length = getStateLength(multipleAgents, k)
@@ -144,6 +158,7 @@ def inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", loa
         singleStepRewards, episodeRunning = g.move(actionList)
         print(g)
 
+''' This method runs the game on a graphical user interface once the agent has been trained'''
 def graphical_inference(gridSize, relative, multipleAgents, k, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
     import pygame
     import GraphicsEnv
