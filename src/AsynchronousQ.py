@@ -1,3 +1,10 @@
+"""This block of code implements the asynchronous Q-Learning algorithm
+using the threading module for multi-processing. FunctionApproximator.py is used
+to acquire the Q values and update the gradients of the target network and the
+policy network. Actions are chosen according to Epsilon-Greedy selection
+At the end, the trained snake is rendered graphically to visually check for behaviour
+"""
+
 import tensorflow as tf
 import Agent
 import FunctionApproximator
@@ -191,6 +198,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10, asyncUpdate=30, globalUpda
     print(threads)
     print("main complete")
 
+"""To render graphics of the trained agents"""
 def graphical_inference(gridSize, relative, multipleAgents, k, size_of_hidden_layer=20, load_dir="checkpoints", load_time_step=500, play=False, scalingFactor=9):
     import pygame
     import GraphicsEnv
