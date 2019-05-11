@@ -1,3 +1,8 @@
+''' This file contains the Game class. The object of this class is instantiated 
+when each new game is created. It initialises the game with the creation of snakes, 
+grid and the initial food points. It also contains a method to return the single 
+stage reward and to indicate if the episode has ended or not '''
+
 from Snake import Snake
 from Food import Food
 from Action import Action
