@@ -1,3 +1,8 @@
+"""This file contains the graphics/UI environment for the snake game
+Is used to represent both the multi-agent and the single agent snake game
+User can also manually play either a single-snake game or multi-snake game
+along with the agents"""
+
 import pygame
 import Game
 import Food
@@ -10,6 +15,7 @@ from Constants import *
 
 pygame.init()  # Initializes all pygame modules
 
+"""Used to draw the score"""
 
 def draw_text(surf, text, size,x,y,color):
     font_name = pygame.font.match_font('arial')
@@ -19,8 +25,9 @@ def draw_text(surf, text, size,x,y,color):
     text_rect.midtop = (x, y)
     surf.blit(text_surface,text_rect)
 
+"""Convert coordinates into pygame coordinates (lower-left => top left)."""
 def to_pygame(p):
-    """Convert coordinates into pygame coordinates (lower-left => top left)."""
+
     return (p.x, gridSize-p.y)
 
 
@@ -37,7 +44,7 @@ def manual_action_list(g,event):
             actionsList[i] = random.choice(snake.permissible_actions())
 
     if g.snakes[0].alive: # user's snake
-        keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed() #To get the keys pressed by user
         if g.snakes[0].joints == []:
             defaultaction = g.snakes[0].findDirection(g.snakes[0].head, g.snakes[0].end)
         else:
@@ -80,6 +87,8 @@ def manual_action(snake, event):
         action_taken = None
     return action_taken
 
+"""This function is used to draw the body of the snake, display score, display food points
+for a manual game of snake"""
 
 def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
     g = Game.Game(numberOfSnakes, gridSize, globalEpisodeLength)  # Instantiating an object of class Game
@@ -134,6 +143,8 @@ def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid
         pygame.display.update()
         clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.
     pygame.quit()
+
+
 
 def displayGame(game, win, screen, colors, scalingFactor = 9):
     width = scalingFactor * gridSize
