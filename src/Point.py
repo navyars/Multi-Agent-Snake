@@ -1,3 +1,8 @@
+''' This file contains the point class which defines the (x, y)
+coordinates of a point. It also contains methods to return all 
+the body points of a snake, compare the equality of two points
+and check if an object is an instance of the point class '''
+
 import copy
 
 class Point:
@@ -5,6 +10,8 @@ class Point:
         self.x = x
         self.y = y
 
+    ''' This method compares if an object is an instance of Point
+    class '''
     @classmethod
     def fromPoint(cls, p):
         assert isinstance(p, Point), "Invalid parameter passed"
@@ -13,10 +20,12 @@ class Point:
     def __str__(self):
         return "({}, {})".format(self.x, self.y)
 
-
+    ''' This method is used to compare the equality of two points '''
     def __eq__(self, p):
         return self.x == p.x and self.y == p.y
 
+    ''' This method takes in the head, joints and tail of a snake
+    and returns all the points along the body of the snake '''
     @staticmethod
     def returnBodyPoints(body):
         points = copy.deepcopy(body)
