@@ -1,4 +1,4 @@
-''' This file is the entry point to the project. It takes in the user arguments, 
+''' This file is the entry point to the project. It takes in the user arguments,
 processes it and then calls the appropriate functions accordingly '''
 
 import argparse
@@ -68,16 +68,16 @@ def main():
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         else:
-            ActorCritic.train(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.alphaTheta, args.alphaW, args.y, args.train_time_steps,
+            ActorCritic.train(args.use_relative_state, args.multi_agent, args.k, args.alphaTheta, args.alphaW, args.y, args.train_time_steps,
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         print("Training complete.")
     else:
         if args.algorithm == 'asyncQ':
-            AsynchronousQ.graphical_inference(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.hidden_units,
+            AsynchronousQ.graphical_inference(args.use_relative_state, args.multi_agent, args.k, args.hidden_units,
                                                                         load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
         else:
-            ActorCritic.graphical_inference(Constants.gridSize,  args.use_relative_state, args.multi_agent, args.k,
+            ActorCritic.graphical_inference(args.use_relative_state, args.multi_agent, args.k,
                                                                     load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
         print("Inference complete.")
 
