@@ -5,20 +5,22 @@ It also provides helper methods to accumulate gradients and update them"""
 import tensorflow as tf
 import numpy as np
 
+import Constants
+
 class NeuralNetwork:
 
-    def __init__(self,data_length, size_of_hidden_layer=20, gamma=0.9, learning_rate=0.1):
+    def __init__(self,data_length, size_of_hidden_layer=20):
         self.graph = tf.Graph()
         with self.graph.as_default():
             layers = self.create_model(data_length, size_of_hidden_layer) # defines the neural network architecture
             action = tf.placeholder(tf.int32, shape=[None,1], name="action_selected")
             Q_value = tf.batch_gather(layers[-1], action, name="Q") # fetch the Q(s,a) value
 
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=Constants.AQ_lr)
 
             reward = tf.placeholder(tf.float32, shape=[None, 1], name="reward")
             best_Q = tf.placeholder(tf.float32, shape=[None, 1], name="best_next_state_Q")
-            t1 = gamma*best_Q
+            t1 = Constants.gamma * best_Q
             t2 = reward + t1
             difference = t2 - Q_value
             loss = tf.square(difference, name="loss")
