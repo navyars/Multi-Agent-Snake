@@ -72,7 +72,7 @@ def getGradientForPolicy(snake, state, action, theta):
 ''' Actor critic algorithm is implemented in this method and the agent is set to
 train according to the algorithm. It also saves the checkpoints while training '''
 def train(maxTimeSteps, checkpointFrequency=500, checkpoint_dir="checkpoints", load=False, load_dir="checkpoints", load_time_step=500):
-    length = getStateLength(Constants.existsMultipleAgents,Constants.numNearestFoodPointsForState)
+    length = getStateLength()
     theta = np.zeros((Constants.numberOfSnakes, length * 2))
     w = np.zeros((Constants.numberOfSnakes, length))
 
@@ -101,10 +101,10 @@ def train(maxTimeSteps, checkpointFrequency=500, checkpoint_dir="checkpoints", l
             for i, snake in enumerate(g.snakes):
                 if not snake.alive:
                     actionList.append(None)
-                    stateList.append([-1] * getStateLength(Constants.existsMultipleAgents,Constants.numNearestFoodPointsForState))
+                    stateList.append([-1] * getStateLength())
                     continue
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-                stateList.append(getState(snake, opponentSnakes, Constants.useRelativeState, Constants.existsMultipleAgents, g.food,Constants.numNearestFoodPointsForState, normalize=True))
+                stateList.append(getState(snake, opponentSnakes, g.food, normalize=True))
                 action = getAction(snake, stateList[i], theta[i])
                 actionList.append(action)
 
@@ -122,7 +122,7 @@ def train(maxTimeSteps, checkpointFrequency=500, checkpoint_dir="checkpoints", l
                 opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
                 state = stateList[i]
                 action = actionList[i]
-                nextState = getState(snake, opponentSnakes, Constants.useRelativeState, Constants.existsMultipleAgents, g.food,Constants.numNearestFoodPointsForState, normalize=True)
+                nextState = getState(snake, opponentSnakes, g.food, normalize=True)
                 reward = singleStepRewards[i]
                 delta = reward + Constants.gamma * getValueFunction(nextState, w[i]) - getValueFunction(state, w[i])
                 w[i] = np.add(w[i], (Constants.AC_alphaW * delta) * np.asarray(state))
@@ -148,10 +148,10 @@ def inference(load_dir="checkpoints", load_time_step=500):
         for i, snake in enumerate(g.snakes):
             if not snake.alive:
                 actionList.append(None)
-                stateList.append([-1] * getStateLength(Constants.existsMultipleAgents,Constants.numNearestFoodPointsForState))
+                stateList.append([-1] * getStateLength())
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            state = getState(snake, opponentSnakes, Constants.useRelativeState, Constants.existsMultipleAgents, g.food,Constants.numNearestFoodPointsForState, normalize=True)
+            state = getState(snake, opponentSnakes, g.food, normalize=True)
             action = getAction(snake, state, theta[i])
             actionList.append(action)
 
@@ -193,7 +193,7 @@ def graphical_inference(load_dir="checkpoints", load_time_step=500, play=False, 
                 actionList.append(None)
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            state = getState(snake, opponentSnakes, Constants.useRelativeState, Constants.existsMultipleAgents, g.food,Constants.numNearestFoodPointsForState, normalize=True)
+            state = getState(snake, opponentSnakes, g.food, normalize=True)
             action = getAction(snake, state, theta[i - int(play) ])
             actionList.append(action)
 

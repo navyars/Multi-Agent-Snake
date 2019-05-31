@@ -71,7 +71,7 @@ def async_Q(max_time_steps, reward, penalty,
             for idx in range(Constants.numberOfSnakes):
                 pruned_snake_list = [ snake for snake in snake_list if snake != snake_list[idx] ]
                 if g.snakes[idx].alive:
-                    initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, Constants.useRelativeState, Constants.existsMultipleAgents, g.food, Constants.numNearestFoodPointsForState, normalize=True)
+                    initial_state[idx] = Agent.getState(g.snakes[idx], pruned_snake_list, g.food, normalize=True)
                     actions_taken[idx] = epsilon_greedy_action(g.snakes[idx], policySess[idx], policyNetwork[idx], initial_state[idx], epsilon[idx])
 
                     state[idx].append(initial_state[idx])
@@ -111,7 +111,7 @@ def async_Q(max_time_steps, reward, penalty,
                         lock.release()
                         state[idx], action[idx], reward[idx], next_state_Q[idx] = [], [], [], []
                     else:
-                        final_state = Agent.getState(g.snakes[idx], pruned_snake_list, Constants.useRelativeState, Constants.existsMultipleAgents, g.food, Constants.numNearestFoodPointsForState, normalize=True)
+                        final_state = Agent.getState(g.snakes[idx], pruned_snake_list, g.food, normalize=True)
                         next_state_best_Q = best_q(g.snakes[idx], targetSess[idx], targetNetwork[idx], [final_state])
                         next_state_Q[idx].append([next_state_best_Q])
 
@@ -165,7 +165,7 @@ def train(max_time_steps=1000, reward=1, penalty=-10,
             print ("Error: %s - %s." % (e.filename, e.strerror))
     os.makedirs(checkpoint_dir)
 
-    length = Agent.getStateLength(Constants.existsMultipleAgents, Constants.numNearestFoodPointsForState)
+    length = Agent.getStateLength()
     #Initializing the 2*n neural nets
     for idx in range(Constants.numberOfSnakes):
         policyNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer))
@@ -219,7 +219,7 @@ def graphical_inference(size_of_hidden_layer=20, load_dir="checkpoints", load_ti
     if play:
         targetNetwork.append(None)
         targetSess.append(None)
-    length = Agent.getStateLength(Constants.existsMultipleAgents, Constants.numNearestFoodPointsForState)
+    length = Agent.getStateLength()
     for idx in range(int(play), numSnakes):
         targetNetwork.append(FunctionApproximator.NeuralNetwork(length, size_of_hidden_layer=size_of_hidden_layer))
         targetSess.append(tf.Session(graph=targetNetwork[idx].graph))
@@ -243,7 +243,7 @@ def graphical_inference(size_of_hidden_layer=20, load_dir="checkpoints", load_ti
                 actionList.append(None)
                 continue
             opponentSnakes = [opponent for opponent in g.snakes if opponent != snake]
-            state = Agent.getState(snake, opponentSnakes, Constants.useRelativeState, Constants.existsMultipleAgents, g.food, Constants.numNearestFoodPointsForState, normalize=True)
+            state = Agent.getState(snake, opponentSnakes, g.food, normalize=True)
             action, _ = targetNetwork[i].max_permissible_Q(targetSess[i], [state], snake.permissible_actions())
             actionList.append(action)
 
