@@ -1,21 +1,22 @@
-''' This file contains the Snake class which creates the snake objects. 
-It ensures that the snakes spawned do not overlap. Each snake has a head, tail, 
+''' This file contains the Snake class which creates the snake objects.
+It ensures that the snakes spawned do not overlap. Each snake has a head, tail,
 joints, 'id', score, alive/dead. It also has methods for getting the body of the
-snake, method that returns a boolean indicating if the snake has eaten food, if 
-the snake hit the wall or another snake, to update the snake's object according 
-to the movement of the snake in a particular direction, return the permissible 
+snake, method that returns a boolean indicating if the snake has eaten food, if
+the snake hit the wall or another snake, to update the snake's object according
+to the movement of the snake in a particular direction, return the permissible
 actions for a snake, and other helper methods to maintain the snake object'''
+
+import Constants
 
 from numpy.random import randint
 
 from Point import Point
 from Action import Action
-from Constants import *
 
 class Snake:
     snakeList = []
 
-    def __init__(self, gridSize, identity):
+    def __init__(self, identity):
         occupiedPoints = []
         for snake in Snake.snakeList:
             body = snake.getBodyList()
@@ -23,7 +24,7 @@ class Snake:
             occupiedPoints.extend(bodyPoints)
 
         while True:
-            self.head = Point(randint(10, gridSize - 10), randint(10, gridSize - 10)) # generate point with at least 10 units gap from any wall
+            self.head = Point(randint(10, Constants.gridSize - 10), randint(10, Constants.gridSize - 10)) # generate point with at least 10 units gap from any wall
             self.end = Point( self.head.x - 5, self.head.y )
             self.joints = []
             body = self.getBodyList()
@@ -74,9 +75,9 @@ class Snake:
 
     ''' Returns a boolean indicating if the snake hit a wall '''
     def didHitWall(self):
-        return (self.head.x == 0 or self.head.x == gridSize or self.head.y == 0 or self.head.y == gridSize)
+        return (self.head.x == 0 or self.head.x == Constants.gridSize or self.head.y == 0 or self.head.y == Constants.gridSize)
 
-    ''' Method to update the point coordinates according to the direction 
+    ''' Method to update the point coordinates according to the direction
     of movement '''
     def _update_point(self, p, direction):
         if direction == Action.TOP:
@@ -99,8 +100,8 @@ class Snake:
         self.head, self.joints, self.end = self._copy(self.prev_head, self.prev_joints, self.prev_end)
         return
 
-    ''' Moves the snake in a direction chosen by it at each time step. This updates 
-    the snake body points ''' 
+    ''' Moves the snake in a direction chosen by it at each time step. This updates
+    the snake body points '''
     def moveInDirection(self, action):
         assert (action in self.permissible_actions()), "Action not allowed in this state."
         self.prev_head, self.prev_joints, self.prev_end = self._copy(self.head, self.joints, self.end)
@@ -160,12 +161,12 @@ class Snake:
         elif p1.x - p2.x < 0 and p1.y - p2.y == 0:
             return Action.LEFT
 
-    ''' Grows the snake in the direction of the tail once the food is eaten. 
+    ''' Grows the snake in the direction of the tail once the food is eaten.
     Should be called before moveInDirection '''
     def growSnake(self):
         if self.joints == []:
             direction = self.findDirection(self.end, self.head)
-        ''' Finding direction from the last joint/head to tail as it is in this direction the increment should happen '''
+         # Finding direction from the last joint/head to tail as it is in this direction the increment should happen
         else:
             direction = self.findDirection(self.end, self.joints[-1])
         self.end = self._update_point(self.end, direction)
@@ -183,7 +184,7 @@ class Snake:
                 actions.append(act)
         return actions
 
-    ''' Once the snake is dead, this method sets the alive bit of the snake to false, 
+    ''' Once the snake is dead, this method sets the alive bit of the snake to false,
     converts the body points into food points and deletes the snake's head, joints and tail '''
     def killSnake(self, food):
         self.alive = False

@@ -1,18 +1,21 @@
-''' This file contains the Game class. The object of this class is instantiated 
-when each new game is created. It initialises the game with the creation of snakes, 
-grid and the initial food points. It also contains a method to return the single 
+''' This file contains the Game class. The object of this class is instantiated
+when each new game is created. It initialises the game with the creation of snakes,
+grid and the initial food points. It also contains a method to return the single
 stage reward and to indicate if the episode has ended or not '''
+
+import numpy as np
+
+import Constants
 
 from Snake import Snake
 from Food import Food
 from Action import Action
-import numpy as np
 
 class Game:
-    def __init__(self, numOfSnakes=2, gridSize=10, maxEpisodeLength=300):
+    def __init__(self, numOfSnakes=Constants.numberOfSnakes, gridSize=Constants.gridSize, maxEpisodeLength=Constants.globalEpisodeLength):
         self.snakes = []
         for idx in range(numOfSnakes):
-            self.snakes.append(Snake(gridSize, idx) )
+            self.snakes.append(Snake(idx) )
 
         self.food = Food(Snake.snakeList)
         self.gameLength = maxEpisodeLength

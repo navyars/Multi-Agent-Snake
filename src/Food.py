@@ -1,20 +1,22 @@
 ''' This file contains the Food class which has
-methods that create food points, add new food 
-points created to the foodlist, and remove the 
+methods that create food points, add new food
+points created to the foodlist, and remove the
 food point from the foodlist once the point is eaten '''
+
+import Constants
 
 from numpy.random import randint
 
 from Point import Point
-from Constants import *
+
 
 class Food:
 
     def __init__(self, snakes=[]):
         self.foodList = []
-        self.createFood(maximumFood, snakes)
+        self.createFood(Constants.maximumFood, snakes)
 
-    ''' This method spawns specified number of food points in the 
+    ''' This method spawns specified number of food points in the
     grid at random positions. It also ensures that the food points
     created are not overlapping '''
     def createFood(self, n, snakes=[]):
@@ -26,14 +28,14 @@ class Food:
 
         for i in range(n):
             while True:
-                x = randint(1, gridSize-1)
-                y = randint(1, gridSize-1)
+                x = randint(1, Constants.gridSize-1)
+                y = randint(1, Constants.gridSize-1)
                 p = Point(x,y)
                 if p not in occupiedPoints and p not in self.foodList:
                     self.foodList.append(p)
                     break
 
-    ''' This method is used to update the foodlist either when new 
+    ''' This method is used to update the foodlist either when new
     food points get added  or when the dead snake's body points are
     converted to food points '''
     def addFoodToList(self, pointList):
@@ -48,5 +50,5 @@ class Food:
             if f == food:
                 del self.foodList[i]
 
-        if(len(self.foodList) < maximumFood):
-            self.createFood(maximumFood - len(self.foodList), snakes)
+        if(len(self.foodList) < Constants.maximumFood):
+            self.createFood(Constants.maximumFood - len(self.foodList), snakes)

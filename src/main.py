@@ -1,4 +1,4 @@
-''' This file is the entry point to the project. It takes in the user arguments, 
+''' This file is the entry point to the project. It takes in the user arguments,
 processes it and then calls the appropriate functions accordingly '''
 
 import argparse
@@ -35,24 +35,6 @@ def main():
     parser.add_argument('--trained_ckpt_index', type=int, default=-1,
                         help="The checkpoint number that refers the file to be loaded.")
 
-    parser.add_argument('--use_relative_state', type=lambda x: (str(x).lower() == 'true'), default=False,
-                        help="States are defined either absolutely or relative to frame of reference of snake. Setting this to true chooses the latter.")
-    parser.add_argument('--multi_agent', type=lambda x: (str(x).lower() == 'true'), default=False,
-                        help="State definition matters on also whether it's a multi-agent scenario or single-agent.")
-    parser.add_argument('--k', type=int, default=3,
-                        help="Number of nearest food points to be stored as part of the state.")
-    parser.add_argument('--gamma', type=float, default=1.0,
-                        help="Gamma value used for calculating returns.")
-
-    parser.add_argument('--alphaW', type=float, default=0.0022,
-                        help="Learning rate for value function. Requires: --algorithm=actorcritic")
-    parser.add_argument('--alphaTheta', type=float, default=0.0011,
-                        help="Learning rate for policy function. Requires: --algorithm=actorcritic")
-    parser.add_argument("--y", type=float, default=1.0,
-                        help="Gamma value for calculating returns.")
-
-    parser.add_argument("--lr", type=float, default=0.0001,
-                        help="Learning rate for training neural network approximator. Requires: --algorithm=asyncQ")
     parser.add_argument('--hidden_units', type=int, default=20,
                         help="Size of the hidden layer of neural network. Requires: --algorithm=asyncQ")
     parser.add_argument('--threads', type=int, default=4,
@@ -63,22 +45,19 @@ def main():
     if args.mode=='train':
         load = (args.trained_ckpt_index != -1)
         if args.algorithm == 'asyncQ':
-            AsynchronousQ.train(max_time_steps=args.train_time_steps, reward=1, penalty=-10, asyncUpdate=128, globalUpdate=512, relativeState=args.use_relative_state,
-                                                    size_of_hidden_layer=args.hidden_units, gamma=args.y, learning_rate=args.lr, num_threads=args.threads,
+            AsynchronousQ.train(max_time_steps=args.train_time_steps, reward=1, penalty=-10,
+                                                    size_of_hidden_layer=args.hidden_units, num_threads=args.threads,
                                                     checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         else:
-            ActorCritic.train(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.alphaTheta, args.alphaW, args.y, args.train_time_steps,
-                                                    checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
+            ActorCritic.train(args.train_time_steps, checkpointFrequency=args.checkpoint_frequency, checkpoint_dir=args.checkpoint_dir,
                                                     load=load, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index)
         print("Training complete.")
     else:
         if args.algorithm == 'asyncQ':
-            AsynchronousQ.graphical_inference(Constants.gridSize, args.use_relative_state, args.multi_agent, args.k, args.hidden_units,
-                                                                        load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
+            AsynchronousQ.graphical_inference(args.hidden_units, load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
         else:
-            ActorCritic.graphical_inference(Constants.gridSize,  args.use_relative_state, args.multi_agent, args.k,
-                                                                    load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
+            ActorCritic.graphical_inference(load_dir=args.trained_dir, load_time_step=args.trained_ckpt_index, play=args.play, scalingFactor=9)
         print("Inference complete.")
 
 if __name__ == '__main__':

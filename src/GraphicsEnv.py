@@ -4,14 +4,16 @@ User can also manually play either a single-snake game or multi-snake game
 along with the agents"""
 
 import pygame
-import Game
-import Food
 import math
 import random
 import numpy as np
 
-from Action import *
-from Constants import *
+import Game
+import Food
+import Constants
+
+from Action import Action
+
 
 pygame.init()  # Initializes all pygame modules
 
@@ -28,7 +30,7 @@ def draw_text(surf, text, size,x,y,color):
 """Convert coordinates into pygame coordinates (lower-left => top left)."""
 def to_pygame(p):
 
-    return (p.x, gridSize-p.y)
+    return (p.x, Constants.gridSize-p.y)
 
 
 def manual_action_list(g,event):
@@ -36,7 +38,7 @@ def manual_action_list(g,event):
     This initialization may be a bit computation intensive, but added this line here for representation of two or more snakes
     Else can simply initialize to 0
     """
-    actionsList = [0]*numberOfSnakes
+    actionsList = [0]*Constants.numberOfSnakes
     for i, snake in enumerate(g.snakes):
         if not snake.alive:
             actionsList[i] = None
@@ -91,23 +93,23 @@ def manual_action(snake, event):
 for a manual game of snake"""
 
 def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid):
-    g = Game.Game(numberOfSnakes, gridSize, globalEpisodeLength)  # Instantiating an object of class Game
-    width = scalingFactor * gridSize
-    height = scalingFactor * gridSize
-    pos_score_x = int(math.floor(width / (numberOfSnakes + 1)))  # For displaying score
+    g = Game.Game()  # Instantiating an object of class Game
+    width = scalingFactor * Constants.gridSize
+    height = scalingFactor * Constants.gridSize
+    pos_score_x = int(math.floor(width / (Constants.numberOfSnakes + 1)))  # For displaying score
     pos_score_y = int(math.floor(height / 20))
     font_size = int(math.floor(height / 40))
     black = (0, 0, 0)
     white = (255, 255, 255)
     red = (255, 0, 0)
     green = (0, 255, 0)
-    colors = np.random.randint(0, 256, size=[numberOfSnakes, 3])
+    colors = np.random.randint(0, 256, size=[Constants.numberOfSnakes, 3])
     if play: # user interacts with the agents
         colors[0] = black # player's snake is always black
     crashed = False
     episodeRunning = True
-    win = pygame.display.set_mode((scalingFactor * gridSize, scalingFactor * gridSize))  # Game Window
-    screen = pygame.Surface((gridSize+1, gridSize+1))  # Grid Screen
+    win = pygame.display.set_mode((scalingFactor * Constants.gridSize, scalingFactor * Constants.gridSize))  # Game Window
+    screen = pygame.Surface((Constants.gridSize+1, Constants.gridSize+1))  # Grid Screen
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
 
@@ -117,13 +119,13 @@ def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid
                 crashed = True
         screen.fill(white)
         #draw the walls
-        pygame.draw.lines(screen, black, True, [(0,0), (0,gridSize), (gridSize, gridSize), (gridSize, 0)])
+        pygame.draw.lines(screen, black, True, [(0,0), (0,Constants.gridSize), (Constants.gridSize, Constants.gridSize), (Constants.gridSize, 0)])
         # The below loop draws all the food particles as points.
         for p in g.food.foodList:
             pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
 
         # This is for drawing the snake and also the snake's head is colored red
-        for idx in range(numberOfSnakes):
+        for idx in range(Constants.numberOfSnakes):
             if g.snakes[idx].alive:
                 body = g.snakes[idx].getBodyList()
                 for i in range(len(body) - 1):
@@ -138,7 +140,7 @@ def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid
         """
         _, episodeRunning = g.move(actionsList)
         win.blit(pygame.transform.scale(screen, win.get_rect().size), (0, 0)) # Transforms the screen window into the win window
-        for idx in range(numberOfSnakes):
+        for idx in range(Constants.numberOfSnakes):
             draw_text(win, "Snake" + str(idx) + "  " + str(g.snakes[idx].score), font_size, pos_score_x * (idx + 1), pos_score_y,black) #Displaying score
         pygame.display.update()
         clock.tick(10)  # (FPS)means that for every second at most 10 frames should pass.
@@ -147,9 +149,9 @@ def runRandomGame(play=True, scalingFactor = 9):  # Scaling the size of the grid
 
 
 def displayGame(game, win, screen, colors, scalingFactor = 9):
-    width = scalingFactor * gridSize
-    height = scalingFactor * gridSize
-    pos_score_x = int(math.floor(width / (numberOfSnakes + 1)))  # For displaying score
+    width = scalingFactor * Constants.gridSize
+    height = scalingFactor * Constants.gridSize
+    pos_score_x = int(math.floor(width / (Constants.numberOfSnakes + 1)))  # For displaying score
     pos_score_y = int(math.floor(height / 20))
     font_size = int(math.floor(height / 40))
     black = (0, 0, 0)
@@ -160,7 +162,7 @@ def displayGame(game, win, screen, colors, scalingFactor = 9):
     clock = pygame.time.Clock()
     screen.fill(white)
     #draw the walls
-    pygame.draw.lines(screen, black, True, [(0,0), (0,gridSize), (gridSize, gridSize), (gridSize, 0)])
+    pygame.draw.lines(screen, black, True, [(0,0), (0,Constants.gridSize), (Constants.gridSize, Constants.gridSize), (Constants.gridSize, 0)])
     # The below loop draws all the food particles as points.
     for p in game.food.foodList:
         pygame.draw.line(screen, green, to_pygame(p), to_pygame(p), 1)  # Drawing all the food points
